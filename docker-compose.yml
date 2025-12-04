@@ -11,5 +11,22 @@ services:
     volumes:
       - ticket_db_data:/var/lib/postgresql/data
 
+    pgadmin:
+      image: dpage/pgadmin4:7
+      container_name: ticket_pgadmin
+      restart: always
+      environment:
+        PGADMIN_DEFAULT_EMAIL: admin@example.com
+        PGADMIN_DEFAULT_PASSWORD: admin123
+      ports:
+        - "8080:80"
+      depends_on:
+        - db
+      volumes:
+        - pgadmin_data:/var/lib/pgadmin
+
 volumes:
   ticket_db_data:
+  pgadmin_data:
+
+
