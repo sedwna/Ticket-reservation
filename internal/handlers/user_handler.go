@@ -2,6 +2,7 @@ package handlers
 
 import (
     "net/http"
+	"strconv"
     "github.com/sedwna/Ticket-reservation/internal/services"
 
     "github.com/gin-gonic/gin"
@@ -22,4 +23,15 @@ func (h *UserHandler) GetAllUsers(c *gin.Context) {
         return
     }
     c.JSON(http.StatusOK, users)
+}
+func (h *UserHandler) GetUserByID(c *gin.Context) {
+	idStr := c.Param("id")
+	id, _ := strconv.ParseInt(idStr, 10, 64)
+
+	user, err := h.Service.GetUserByID(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+	c.JSON(http.StatusOK, user)
 }
