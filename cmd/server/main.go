@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/sajad-dehghan/amphi-reservation-backend/internal/db"
-	"github.com/sajad-dehghan/amphi-reservation-backend/internal/handlers"
+	"github.com/sedwna/Ticket-reservation/internal/db"
+	"github.com/sedwna/Ticket-reservation/internal/handlers"
 )
 
 func main() {
