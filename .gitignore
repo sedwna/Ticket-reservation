@@ -1,0 +1,45 @@
+# Environment
+.env
+.env.local
+.env.production
+
+# Dependencies
+node_modules/
+vendor/
+
+# Build
+dist/
+build/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude/FCC
+CLAUDE.local.md
+.claude/extra/
+.claude/scheduled_tasks.json
+
+# Go
+backend/tmp/
+
+# Debug
+debug/
+__debug_bin*
+
+# Logs
+*.log

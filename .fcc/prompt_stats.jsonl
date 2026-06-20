@@ -1,0 +1,15 @@
+{"timestamp":"2026-06-18T17:37:04.170099+00:00","status":"error","changed":false,"original_chars":1305,"enhanced_chars":1305,"reason":"UnicodeEncodeError: 'utf-8' codec can't encode character '\\udc9d' in position 4379: surrogates not allowed"}
+{"timestamp":"2026-06-18T18:12:12.687056+00:00","status":"empty","changed":false,"original_chars":113,"enhanced_chars":113,"reason":""}
+{"timestamp":"2026-06-18T18:24:44.016736+00:00","status":"empty","changed":false,"original_chars":182,"enhanced_chars":182,"reason":""}
+{"timestamp":"2026-06-18T18:34:32.485851+00:00","status":"error","changed":false,"original_chars":1062,"enhanced_chars":1062,"reason":"UnicodeEncodeError: 'utf-8' codec can't encode character '\\udc8f' in position 4649: surrogates not allowed"}
+{"timestamp":"2026-06-18T18:42:24.177012+00:00","status":"empty","changed":false,"original_chars":611,"enhanced_chars":611,"reason":""}
+{"timestamp":"2026-06-18T18:57:16.327766+00:00","status":"enhanced","changed":true,"original_chars":634,"enhanced_chars":1341,"reason":""}
+{"timestamp":"2026-06-18T19:09:30.220637+00:00","status":"enhanced","changed":true,"original_chars":623,"enhanced_chars":670,"reason":""}
+{"timestamp":"2026-06-18T19:18:12.446689+00:00","status":"enhanced","changed":true,"original_chars":119,"enhanced_chars":244,"reason":""}
+{"timestamp":"2026-06-18T19:23:55.865945+00:00","status":"enhanced","changed":true,"original_chars":342,"enhanced_chars":787,"reason":""}
+{"timestamp":"2026-06-18T19:32:06.034604+00:00","status":"empty","changed":false,"original_chars":370,"enhanced_chars":370,"reason":""}
+{"timestamp":"2026-06-18T19:35:13.242414+00:00","status":"error","changed":false,"original_chars":315,"enhanced_chars":315,"reason":"UnicodeEncodeError: 'utf-8' codec can't encode character '\\udc9d' in position 5125: surrogates not allowed"}
+{"timestamp":"2026-06-18T19:37:12.105278+00:00","status":"enhanced","changed":true,"original_chars":466,"enhanced_chars":786,"reason":""}
+{"timestamp":"2026-06-18T19:39:39.907067+00:00","status":"error","changed":false,"original_chars":237,"enhanced_chars":237,"reason":"UnicodeEncodeError: 'utf-8' codec can't encode character '\\udc9d' in position 5039: surrogates not allowed"}
+{"timestamp":"2026-06-18T19:44:13.131603+00:00","status":"error","changed":false,"original_chars":312,"enhanced_chars":312,"reason":"UnicodeEncodeError: 'utf-8' codec can't encode character '\\udc81' in position 5154: surrogates not allowed"}
+{"timestamp":"2026-06-18T19:49:48.843949+00:00","status":"error","changed":false,"original_chars":410,"enhanced_chars":410,"reason":"RemoteProtocolError: peer closed connection without sending complete message body (incomplete chunked read)"}
