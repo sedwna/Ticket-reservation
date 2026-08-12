@@ -4,7 +4,6 @@ import { useAuth } from '../../context/authContext';
 import authService from '../../services/authService';
 import toast from 'react-hot-toast';
 import Button from '../../components/common/Button';
-import ThemeToggle from '../../components/common/ThemeToggle';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 const strengthLabels = ['', 'ضعیف', 'متوسط', 'خوب', 'عالی'];
@@ -69,7 +68,7 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface p-4 py-8">
       <div className="w-full max-w-lg animate-fade-in-up">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex items-center">
           <Button
             to="/"
             variant="ghost"
@@ -78,7 +77,6 @@ export default function RegisterPage() {
           >
             <ArrowLeftIcon className="w-4 h-4" /> بازگشت
           </Button>
-          <ThemeToggle />
         </div>
 
         <div className="bg-surface-card rounded-2xl shadow-card border border-line p-8">

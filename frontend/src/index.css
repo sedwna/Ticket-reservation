@@ -95,6 +95,10 @@
   --chart-primary: #2c5478;
   --chart-accent: #f59e0b;
   --chart-success: #10b981;
+  --interaction-accent: #2c5478;
+  --interaction-border: rgb(58 106 148 / 0.55);
+  --interaction-ring: rgb(58 106 148 / 0.32);
+  --interaction-glow: 0 16px 34px -20px rgb(44 84 120 / 0.42), 0 0 0 1px rgb(58 106 148 / 0.08);
 }
 
 .dark {
@@ -142,6 +146,10 @@
   --chart-primary: #78aeda;
   --chart-accent: #fbbf24;
   --chart-success: #34d399;
+  --interaction-accent: #fbbf24;
+  --interaction-border: rgb(251 191 36 / 0.72);
+  --interaction-ring: rgb(251 191 36 / 0.38);
+  --interaction-glow: 0 20px 44px -24px rgb(245 158 11 / 0.82), 0 0 0 1px rgb(251 191 36 / 0.18), 0 10px 26px -20px rgb(0 0 0 / 0.95);
   --shadow-card: 0 1px 0 rgb(255 255 255 / 0.025), 0 14px 34px -24px rgb(0 0 0 / 0.8);
   --shadow-card-hover: 0 20px 46px -24px rgb(0 0 0 / 0.9), 0 0 0 1px rgb(126 164 198 / 0.08);
   --shadow-elevated: 0 28px 70px -22px rgb(0 0 0 / 0.9);
@@ -341,6 +349,31 @@
     @apply bg-surface-card rounded-2xl shadow-card border border-line cursor-pointer
            hover:shadow-card-hover hover:-translate-y-1 hover:border-brand-border
            transition-all duration-300 ease-out;
+  }
+
+  /* Premium interaction feedback — gold is reserved for interactive states in dark mode. */
+  .premium-interactive {
+    transition-property: transform, border-color, box-shadow, background-color, color, filter;
+    transition-duration: 220ms;
+    transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .dark :where(.card-interactive, .premium-interactive, .btn-primary, .btn-secondary):not(:disabled):hover {
+      border-color: var(--interaction-border);
+      box-shadow: var(--interaction-glow);
+    }
+
+    .dark .premium-interactive:not(:disabled):hover {
+      color: var(--interaction-accent);
+      transform: translateY(-2px);
+    }
+  }
+
+  .dark :where(.card-interactive, .premium-interactive, .btn-primary, .btn-secondary):focus-visible {
+    outline: 2px solid var(--interaction-accent);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 4px var(--interaction-ring), var(--interaction-glow);
   }
 
   /* Skeleton loading */

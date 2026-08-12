@@ -10,7 +10,7 @@ export default function ThemeToggle({ className = '' }) {
     <button
       type="button"
       onClick={toggleTheme}
-      className={`group relative inline-flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-line bg-surface-card text-ink-muted shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-300 hover:text-brand-accent hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${className}`}
+      className={`premium-interactive group relative inline-flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-line bg-surface-card text-ink-muted shadow-sm hover:border-brand-300 hover:text-brand-accent hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${className}`}
       aria-label={label}
       title={label}
       aria-pressed={isDark}

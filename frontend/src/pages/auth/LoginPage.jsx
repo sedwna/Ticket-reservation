@@ -4,7 +4,6 @@ import { useAuth } from '../../context/authContext';
 import authService from '../../services/authService';
 import toast from 'react-hot-toast';
 import Button from '../../components/common/Button';
-import ThemeToggle from '../../components/common/ThemeToggle';
 import { EyeIcon, EyeSlashIcon, AcademicCapIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import defaultData from '../../data/defaultData';
 
@@ -42,6 +41,14 @@ export default function LoginPage() {
       setFormError('لطفاً موارد علامت‌گذاری شده را اصلاح کنید.');
     }
     return !nextErrors.email && !nextErrors.password;
+  };
+
+  const fillTestAccount = (account) => {
+    setEmail(account.email);
+    setPassword(account.password);
+    setShowPassword(false);
+    setFormError('');
+    setErrors({ email: '', password: '' });
   };
 
   const handleSubmit = async (e) => {
@@ -114,10 +121,7 @@ export default function LoginPage() {
               <ArrowLeftIcon className="w-4 h-4" />
               بازگشت
             </Button>
-            <div className="flex items-center gap-3">
-              <span className="hidden text-sm text-ink-muted sm:inline">ورود امن به سامانه</span>
-              <ThemeToggle />
-            </div>
+            <span className="hidden text-sm text-ink-muted sm:inline">ورود امن به سامانه</span>
           </div>
 
           <div className="card p-8 sm:p-10 bg-surface-card">
@@ -229,16 +233,36 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-6 rounded-3xl border border-line-strong bg-surface-alt p-4 text-sm text-ink shadow-sm">
-            <p className="font-semibold text-ink-strong mb-3">اطلاعات تست</p>
-            <div className="grid gap-3">
-              <div className="rounded-2xl border border-line-strong bg-surface-card p-3">
-                <p className="font-medium text-ink-strong">حساب مدیر</p>
-                <p className="ltr text-left text-ink-muted mt-1" dir="ltr">{defaultData.credentials.admin.email} / {defaultData.credentials.admin.password}</p>
+            <div className="mb-3 flex items-start justify-between gap-4">
+              <div>
+                <p className="font-semibold text-ink-strong">حساب‌های آزمایشی معتبر</p>
+                <p className="mt-1 text-xs text-ink-muted">مربوط به دیتاست کامل پروژه</p>
               </div>
-              {defaultData.credentials.users.map((u, idx) => (
-                <div key={u.email} className="rounded-2xl border border-line-strong bg-surface-card p-3">
-                  <p className="font-medium text-ink-strong">حساب کاربر {idx + 1}</p>
-                  <p className="ltr text-left text-ink-muted mt-1" dir="ltr">{u.email} / {u.password}</p>
+              <span className="rounded-full border border-success-border bg-success-soft px-2.5 py-1 text-[10px] font-bold text-success-ink">
+                فعال
+              </span>
+            </div>
+            <div className="grid gap-3">
+              {[defaultData.credentials.admin, ...defaultData.credentials.users].map((account) => (
+                <div key={account.email} className="rounded-2xl border border-line-strong bg-surface-card p-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="font-medium text-ink-strong">{account.label}</p>
+                      <p className="ltr mt-1 break-all text-left text-xs text-ink-muted" dir="ltr">
+                        {account.email}
+                      </p>
+                      <p className="ltr mt-1 text-left text-xs font-semibold text-brand-ink" dir="ltr">
+                        {account.password}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => fillTestAccount(account)}
+                      className="premium-interactive shrink-0 rounded-xl border border-brand-border bg-brand-soft px-3 py-2 text-xs font-semibold text-brand-ink hover:bg-brand-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
+                    >
+                      استفاده از حساب
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
