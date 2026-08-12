@@ -5,6 +5,7 @@ import authService from '../../services/authService';
 import toast from 'react-hot-toast';
 import Button from '../../components/common/Button';
 import { EyeIcon, EyeSlashIcon, AcademicCapIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import defaultData from '../../data/defaultData';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -15,6 +16,8 @@ export default function LoginPage() {
   const [formError, setFormError] = useState('');
   const { login, isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
+
+  
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -226,12 +229,14 @@ export default function LoginPage() {
             <div className="grid gap-3">
               <div className="rounded-2xl border border-slate-200 bg-white p-3">
                 <p className="font-medium text-slate-800">حساب مدیر</p>
-                <p className="ltr text-left text-slate-500 mt-1" dir="ltr">admin@basu.ac.ir / REMOVED_SECRET</p>
+                <p className="ltr text-left text-slate-500 mt-1" dir="ltr">{defaultData.credentials.admin.email} / {defaultData.credentials.admin.password}</p>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-white p-3">
-                <p className="font-medium text-slate-800">حساب کاربر</p>
-                <p className="ltr text-left text-slate-500 mt-1" dir="ltr">test@basu.ac.ir / REMOVED_SECRET</p>
-              </div>
+              {defaultData.credentials.users.map((u, idx) => (
+                <div key={u.email} className="rounded-2xl border border-slate-200 bg-white p-3">
+                  <p className="font-medium text-slate-800">حساب کاربر {idx + 1}</p>
+                  <p className="ltr text-left text-slate-500 mt-1" dir="ltr">{u.email} / {u.password}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>

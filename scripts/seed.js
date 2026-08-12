@@ -53,6 +53,11 @@ const events = [
   }
 ];
 
+const usersToCreate = [
+  { student_id: '98123456', first_name: 'رضا', last_name: 'رضایی', email: 'user1@basu.ac.ir', password: 'userpass1' },
+  { student_id: '98123457', first_name: 'سارا', last_name: 'محمدی', email: 'user2@basu.ac.ir', password: 'userpass2' },
+];
+
 function request(opts, data) {
   return new Promise((resolve, reject) => {
     const body = data ? JSON.stringify(data) : '';
@@ -75,13 +80,29 @@ function request(opts, data) {
 }
 
 async function main() {
-  // Login as admin
-  const loginResp = await request(
-    { method: 'POST', path: '/api/v1/auth/login' },
-    { email: 'admin@basu.ac.ir', password: 'REMOVED_SECRET' }
-  );
-  const token = loginResp.data.token;
-  console.log('Logged in as admin.');
+  // Ensure demo users exist (register if not)
+  for (const u of usersToCreate) {
+    try {
+      const reg = await request({ method: 'POST', path: '/api/v1/auth/register' }, { student_id: u.student_id, first_name: u.first_name, last_name: u.last_name, email: u.email, password: u.password });
+      console.log(`Registered user ${u.email}: ${reg.message || 'ok'}`);
+    } catch (e) {
+      console.log(`Register skipped/failed for ${u.email}:`, e.message || e);
+    }
+  }
+
+  // Login as admin (the backend seeds admin on startup if missing)
+  let token = null;
+  try {
+    const loginResp = await request(
+      { method: 'POST', path: '/api/v1/auth/login' },
+      { email: 'admin@basu.ac.ir', password: 'REMOVED_SECRET' }
+    );
+    token = loginResp.data.token;
+    console.log('Logged in as admin.');
+  } catch (err) {
+    console.error('Failed to login as admin. Make sure the backend is running and migrations have run.');
+    throw err;
+  }
 
   // Clean existing events (delete all)
   const existingEvents = await request(
@@ -113,6 +134,33 @@ async function main() {
     console.log(`  ${e.event_date} | ${e.total_capacity} seats | ${e.title}`);
   });
   console.log('══════════════════════');
+
+  // Create a few reservations for demo users
+  const createdEvents = allEvents.data || [];
+  for (const u of usersToCreate) {
+    try {
+      const login = await request({ method: 'POST', path: '/api/v1/auth/login' }, { email: u.email, password: u.password });
+      const userToken = login.data.token;
+      console.log(`Logged in as ${u.email}`);
+
+      // For first two events, reserve first available seat
+      for (let i = 0; i < Math.min(3, createdEvents.length); i++) {
+        const ev = createdEvents[i];
+        const seats = await request({ method: 'GET', path: `/api/v1/events/${ev.id}/seats`, token });
+        const available = (seats.data || []).filter(s => s.status === 'AVAILABLE');
+        if (available.length === 0) continue;
+        const seat = available[0];
+        try {
+          const res = await request({ method: 'POST', path: '/api/v1/reservations', token: userToken }, { event_id: ev.id, seat_id: seat.id });
+          console.log(`Reserved seat ${seat.seat_label} for ${u.email} on ${ev.title}`);
+        } catch (e) {
+          console.log(`Failed to reserve for ${u.email}:`, e.message || e);
+        }
+      }
+    } catch (e) {
+      console.log(`Skipping reservations for ${u.email}: login failed`);
+    }
+  }
 }
 
 main().catch(e => console.error('Error:', e));

@@ -24,7 +24,7 @@ export default function EventsListPage() {
       setLoading(true);
       const r = await eventService.getActiveEvents();
       if (r.success) {
-        setEvents(r.data || []);
+        setEvents(r.data || defaultData.events);
       } else {
         setEvents(defaultData.events);
       }
@@ -120,6 +120,15 @@ export default function EventsListPage() {
                 <h3 className="text-lg font-bold text-slate-900 mb-3 line-clamp-2 group-hover:text-brand-700 transition-colors">
                   {event.title}
                 </h3>
+
+                {/* Organizer */}
+                {event.organizer && (
+                  <div className="flex items-center gap-2 text-sm text-slate-500 mb-3">
+                    <span className="font-medium text-slate-700"> برگزارکننده: </span>
+                    <span>{event.organizer.name}</span>
+                    {event.organizer.email && <span className="text-xs text-slate-400">· {event.organizer.email}</span>}
+                  </div>
+                )}
 
                 {/* Time */}
                 <div className="flex items-center gap-1.5 text-sm text-slate-500 mb-4">
