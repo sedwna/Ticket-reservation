@@ -13,13 +13,20 @@ FROM nginx:alpine
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Nginx config for SPA routing
+# Nginx config for SPA routing with runtime service DNS resolution
 RUN echo 'server { \
     listen 80; \
     root /usr/share/nginx/html; \
     index index.html; \
     location / { try_files $uri /index.html; } \
-    location /api/ { proxy_pass http://backend:8080/api/; } \
+    location /api/ { \
+        resolver 127.0.0.11 valid=30s; \
+        proxy_pass http://backend:8080$request_uri; \
+        proxy_set_header Host $host; \
+        proxy_set_header X-Real-IP $remote_addr; \
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
+        proxy_set_header X-Forwarded-Proto $scheme; \
+    } \
 }' > /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

@@ -62,7 +62,7 @@ export default function DashboardPage() {
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
           {/* Trend Chart */}
           <div className="card p-6">
-            <h3 className="text-lg font-bold text-slate-900 mb-6">📈 روند رزروها (۷ روز اخیر)</h3>
+            <h3 className="text-lg font-bold text-slate-900 mb-6">روند رزروها (۷ روز اخیر)</h3>
             {stats?.reservation_trend?.length > 0 ? (
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={stats.reservation_trend}>
@@ -84,7 +84,7 @@ export default function DashboardPage() {
 
           {/* Recent Reservations */}
           <div className="card p-6">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">🕐 آخرین رزروها</h3>
+            <h3 className="text-lg font-bold text-slate-900 mb-4">آخرین رزروها</h3>
             {stats?.recent_reservations?.length > 0 ? (
               <div className="space-y-3">
                 {stats.recent_reservations.slice(0, 8).map((r, i) => (

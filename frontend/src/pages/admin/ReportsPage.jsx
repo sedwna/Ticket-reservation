@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { ArrowDownTrayIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowDownTrayIcon, MagnifyingGlassIcon, XMarkIcon,
+  CalendarDaysIcon, CheckCircleIcon, TicketIcon,
+} from '@heroicons/react/24/outline';
 import {
   BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -221,8 +224,8 @@ export default function ReportsPage() {
               <div className="card p-6">
                 <h3 className="text-lg font-bold text-slate-900 mb-6">
                   {eventReport
-                    ? `📊 رزروهای: ${eventReport.event_title}`
-                    : '📊 مقایسه رزروها به تفکیک رویداد'}
+                    ? `رزروهای: ${eventReport.event_title}`
+                    : 'مقایسه رزروها به تفکیک رویداد'}
                 </h3>
                 {barData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
@@ -243,8 +246,8 @@ export default function ReportsPage() {
               <div className="card p-6">
                 <h3 className="text-lg font-bold text-slate-900 mb-4">
                   {eventReport
-                    ? `🥧 وضعیت ظرفیت: ${eventReport.event_title}`
-                    : '🥧 توزیع رزروها'}
+                    ? `وضعیت ظرفیت: ${eventReport.event_title}`
+                    : 'توزیع رزروها'}
                 </h3>
                 {pieData.length > 0 ? (
                   <div className="flex flex-col lg:flex-row items-center gap-6">
@@ -313,7 +316,7 @@ export default function ReportsPage() {
               <div className="grid sm:grid-cols-3 gap-4 mb-8">
                 <div className="card p-5 flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center">
-                    <span className="text-2xl">📅</span>
+                    <CalendarDaysIcon className="w-6 h-6 text-brand-600" />
                   </div>
                   <div>
                     <p className="text-2xl font-extrabold text-slate-900">{eventReport.total_capacity}</p>
@@ -322,7 +325,7 @@ export default function ReportsPage() {
                 </div>
                 <div className="card p-5 flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
-                    <span className="text-2xl">✅</span>
+                    <CheckCircleIcon className="w-6 h-6 text-emerald-600" />
                   </div>
                   <div>
                     <p className="text-2xl font-extrabold text-slate-900">{eventReport.reserved_count}</p>
@@ -331,7 +334,7 @@ export default function ReportsPage() {
                 </div>
                 <div className="card p-5 flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
-                    <span className="text-2xl">🪑</span>
+                    <TicketIcon className="w-6 h-6 text-amber-600" />
                   </div>
                   <div>
                     <p className="text-2xl font-extrabold text-slate-900">{eventReport.available_count}</p>
@@ -344,7 +347,7 @@ export default function ReportsPage() {
             {/* Trend */}
             {!eventReport && trend.length > 0 && (
               <div className="card p-6 mb-8">
-                <h3 className="text-lg font-bold text-slate-900 mb-6">📈 روند رزروها (۷ روز)</h3>
+                <h3 className="text-lg font-bold text-slate-900 mb-6">روند رزروها (۷ روز)</h3>
                 <ResponsiveContainer width="100%" height={240}>
                   <LineChart data={trend}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -361,7 +364,7 @@ export default function ReportsPage() {
             {/* Table */}
             <div className="card overflow-x-auto">
               <h3 className="text-lg font-bold text-slate-900 p-6 pb-4">
-                📋 جزئیات رزروها
+                جزئیات رزروها
                 {eventReport && <span className="text-sm font-normal text-slate-400 mr-2">— {eventReport.event_title}</span>}
               </h3>
               {filteredReservations.length === 0 ? (

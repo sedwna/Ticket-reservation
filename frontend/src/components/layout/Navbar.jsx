@@ -38,7 +38,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-sm">
+      <nav role="navigation" aria-label="Main navigation" className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
 
@@ -120,7 +120,7 @@ export default function Navbar() {
 
         {/* Mobile Drawer */}
         {mobileOpen && isAuthenticated && (
-          <div className="md:hidden border-t border-slate-100 bg-white animate-slide-down">
+          <div id="mobile-menu" className="md:hidden border-t border-slate-100 bg-white animate-slide-down">
             <div className="px-4 py-3 space-y-1">
               {links.map((link) => (
                 <Link

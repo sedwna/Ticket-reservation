@@ -246,10 +246,10 @@ export default function EventManagementPage() {
                         onChange={(ev) => handleStatusChange(e.id, ev.target.value)}
                         className="text-xs font-semibold rounded-lg border border-slate-200 py-1.5 px-2 bg-white cursor-pointer hover:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all"
                       >
-                        <option value="ACTIVE">🟢 فعال</option>
-                        <option value="CLOSED">🔒 پایان ثبت‌نام</option>
-                        <option value="COMPLETED">✅ برگزار شده</option>
-                        <option value="CANCELLED">❌ لغو شده</option>
+                        <option value="ACTIVE">فعال</option>
+                        <option value="CLOSED">پایان ثبت‌نام</option>
+                        <option value="COMPLETED">برگزار شده</option>
+                        <option value="CANCELLED">لغو شده</option>
                       </select>
                     </td>
                     <td className="py-3 px-4">
@@ -315,7 +315,7 @@ export default function EventManagementPage() {
           {!editing && (
             <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-bold text-slate-800">⚙️ پیکربندی سالن</h4>
+                <h4 className="font-bold text-slate-800">پیکربندی سالن</h4>
                 <div className="flex items-center gap-3">
                   {!useLegacy && (
                     <button type="button" onClick={addRow} className="text-xs btn-ghost !py-1.5 !px-3 !text-brand-600 hover:!bg-brand-50">
@@ -364,9 +364,9 @@ export default function EventManagementPage() {
                   </div>
 
                   <div className="flex items-center gap-4 text-sm text-slate-600 bg-white rounded-lg p-3 border border-slate-100">
-                    <span>📊 مجموع: <strong className="text-brand-700">{totalCap}</strong> صندلی</span>
-                    <span>⭐ VIP: <strong className="text-amber-600">{vipCount}</strong></span>
-                    <span>💺 معمولی: <strong className="text-slate-600">{totalCap - vipCount}</strong></span>
+                    <span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-brand-500"></span> مجموع: <strong className="text-brand-700">{totalCap}</strong> صندلی</span>
+                    <span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-400"></span> VIP: <strong className="text-amber-600">{vipCount}</strong></span>
+                    <span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-slate-400"></span> معمولی: <strong className="text-slate-600">{totalCap - vipCount}</strong></span>
                   </div>
                 </>
               )}
