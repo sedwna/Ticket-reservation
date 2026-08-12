@@ -17,10 +17,10 @@
   --color-brand-950: #0d1f32;
 
   /* Accent — Warm Amber/Gold (warmth, CTA) */
-  --color-accent-400: #fbbf24;
-  --color-accent-500: #f59e0b;
-  --color-accent-600: #d97706;
-  --color-accent-700: #b45309;
+  --color-accent-400: #f0cd72;
+  --color-accent-500: #d8ad4f;
+  --color-accent-600: #bd8d35;
+  --color-accent-700: #916721;
 
   /* Success — Refined Green */
   --color-success-50: #ecfdf5;
@@ -93,12 +93,18 @@
   --chart-axis: #94a3b8;
   --chart-grid: #e8eef5;
   --chart-primary: #2c5478;
-  --chart-accent: #f59e0b;
+  --chart-accent: #d8ad4f;
   --chart-success: #10b981;
   --interaction-accent: #2c5478;
   --interaction-border: rgb(58 106 148 / 0.55);
   --interaction-ring: rgb(58 106 148 / 0.32);
   --interaction-glow: 0 16px 34px -20px rgb(44 84 120 / 0.42), 0 0 0 1px rgb(58 106 148 / 0.08);
+  --field-focus-border: #3a6a94;
+  --field-focus-ring: rgb(58 106 148 / 0.24);
+  --field-autofill-surface: #fff8e8;
+  --field-autofill-border: #cda84f;
+  --field-autofill-ring: rgb(205 168 79 / 0.2);
+  --field-autofill-ink: #302713;
 }
 
 .dark {
@@ -144,12 +150,18 @@
   --chart-axis: #8190a5;
   --chart-grid: #202c3f;
   --chart-primary: #78aeda;
-  --chart-accent: #fbbf24;
+  --chart-accent: #f0cd72;
   --chart-success: #34d399;
-  --interaction-accent: #fbbf24;
-  --interaction-border: rgb(251 191 36 / 0.72);
-  --interaction-ring: rgb(251 191 36 / 0.38);
-  --interaction-glow: 0 20px 44px -24px rgb(245 158 11 / 0.82), 0 0 0 1px rgb(251 191 36 / 0.18), 0 10px 26px -20px rgb(0 0 0 / 0.95);
+  --interaction-accent: #e5bc5b;
+  --interaction-border: rgb(229 188 91 / 0.76);
+  --interaction-ring: rgb(229 188 91 / 0.34);
+  --interaction-glow: 0 20px 44px -24px rgb(216 173 79 / 0.72), 0 0 0 1px rgb(240 205 114 / 0.18), 0 10px 26px -20px rgb(0 0 0 / 0.95);
+  --field-focus-border: #e5bc5b;
+  --field-focus-ring: rgb(229 188 91 / 0.23);
+  --field-autofill-surface: #211c12;
+  --field-autofill-border: #d8ad4f;
+  --field-autofill-ring: rgb(229 188 91 / 0.22);
+  --field-autofill-ink: #fff7df;
   --shadow-card: 0 1px 0 rgb(255 255 255 / 0.025), 0 14px 34px -24px rgb(0 0 0 / 0.8);
   --shadow-card-hover: 0 20px 46px -24px rgb(0 0 0 / 0.9), 0 0 0 1px rgb(126 164 198 / 0.08);
   --shadow-elevated: 0 28px 70px -22px rgb(0 0 0 / 0.9);
@@ -278,7 +290,7 @@
   }
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl
-           bg-accent-500 text-white font-medium
+           bg-accent-500 text-brand-950 font-semibold
            shadow-sm hover:shadow-md hover:bg-accent-600
            active:scale-[0.97] transition-all duration-200
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface
@@ -325,11 +337,37 @@
     @apply w-full px-4 py-2.5 rounded-xl
            bg-surface-card border border-line-strong
            text-ink placeholder:text-ink-faint
-           focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500
+           focus:outline-none
            transition-all duration-200 shadow-sm;
+  }
+  .input-field:focus {
+    border-color: var(--field-focus-border);
+    box-shadow: 0 0 0 3px var(--field-focus-ring), 0 1px 2px rgb(15 23 42 / 0.08);
+  }
+  .input-field:-webkit-autofill,
+  .input-field:-webkit-autofill:hover {
+    border-color: var(--field-autofill-border);
+    caret-color: var(--field-autofill-ink);
+    -webkit-text-fill-color: var(--field-autofill-ink);
+    -webkit-box-shadow: 0 0 0 1000px var(--field-autofill-surface) inset, 0 0 0 1px var(--field-autofill-ring);
+    box-shadow: 0 0 0 1000px var(--field-autofill-surface) inset, 0 0 0 1px var(--field-autofill-ring);
+  }
+  .input-field:-webkit-autofill:focus {
+    border-color: var(--field-focus-border);
+    -webkit-box-shadow: 0 0 0 1000px var(--field-autofill-surface) inset, 0 0 0 3px var(--field-focus-ring);
+    box-shadow: 0 0 0 1000px var(--field-autofill-surface) inset, 0 0 0 3px var(--field-focus-ring);
+  }
+  .input-field:autofill {
+    border-color: var(--field-autofill-border);
+    background-color: var(--field-autofill-surface);
+    color: var(--field-autofill-ink);
   }
   .input-field.error {
     @apply border-red-300 focus:ring-red-500/30 focus:border-red-500;
+  }
+  .input-field.error:focus {
+    border-color: var(--color-danger-border);
+    box-shadow: 0 0 0 3px rgb(239 68 68 / 0.22);
   }
   .input-icon {
     @apply absolute top-1/2 -translate-y-1/2 text-ink-faint

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import {
-  ArrowDownTrayIcon, MagnifyingGlassIcon, XMarkIcon,
-  CalendarDaysIcon, CheckCircleIcon, TicketIcon,
+  ArrowDownTrayIcon, MagnifyingGlassIcon, FunnelIcon,
+  CalendarDaysIcon, CheckCircleIcon, TicketIcon, XMarkIcon,
 } from '@heroicons/react/24/outline';
 import {
   BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
@@ -23,6 +23,23 @@ import {
 } from '../../utils/chartTheme';
 
 const PIE_COLORS = ['#10b981', '#ef4444', '#f59e0b', '#3b82f6', '#1A3C5E', '#8b5cf6', '#ec4899'];
+const EMPTY_FILTERS = { event_id: '', date_from: '', date_to: '' };
+const STATUS_LABELS = {
+  ACTIVE: 'فعال',
+  CANCELLED: 'لغوشده',
+  COMPLETED: 'تکمیل‌شده',
+};
+
+const formatFilterDate = (value) => {
+  if (!value) return '';
+  const date = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('fa-IR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
+};
 
 export default function ReportsPage() {
   // Filter state
@@ -30,10 +47,10 @@ export default function ReportsPage() {
   const [eventFilter, setEventFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
 
   // Data state
   const [loading, setLoading] = useState(true);
-  const [allReservations, setAllReservations] = useState([]);
   const [filteredReservations, setFilteredReservations] = useState([]);
   const [eventReport, setEventReport] = useState(null);
   const [globalOccupancy, setGlobalOccupancy] = useState(null);
@@ -60,11 +77,9 @@ export default function ReportsPage() {
         // Load all reservations
         const allRes = await reservationService.getAll();
         if (allRes.success) {
-          setAllReservations(allRes.data || []);
           setFilteredReservations(allRes.data || []);
         } else {
           const fallbackReservations = [...defaultData.reservations.active, ...defaultData.reservations.history];
-          setAllReservations(fallbackReservations);
           setFilteredReservations(fallbackReservations);
         }
       } catch {
@@ -72,7 +87,6 @@ export default function ReportsPage() {
         setEvents(defaultData.events);
         setGlobalOccupancy(defaultData.occupancyData);
         setTrend(defaultData.stats.reservation_trend);
-        setAllReservations(fallbackReservations);
         setFilteredReservations(fallbackReservations);
       } finally { setLoading(false); }
     };
@@ -80,20 +94,34 @@ export default function ReportsPage() {
   }, []);
 
   // Apply filters — refetch from API or filter locally
-  const applyFilters = useCallback(async () => {
+  const applyFilters = useCallback(async (filtersOverride) => {
+    const nextFilters = filtersOverride || {
+      event_id: eventFilter,
+      date_from: dateFrom,
+      date_to: dateTo,
+    };
+
+    if (nextFilters.date_from && nextFilters.date_to && nextFilters.date_from > nextFilters.date_to) {
+      toast.error('تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد');
+      return;
+    }
+
     setRefreshing(true);
     try {
       const filters = {};
-      if (eventFilter) filters.event_id = eventFilter;
-      if (dateFrom) filters.date_from = dateFrom;
-      if (dateTo) filters.date_to = dateTo;
+      if (nextFilters.event_id) filters.event_id = nextFilters.event_id;
+      if (nextFilters.date_from) filters.date_from = nextFilters.date_from;
+      if (nextFilters.date_to) filters.date_to = nextFilters.date_to;
 
       const res = await reservationService.getAll(filters);
-      if (res.success) setFilteredReservations(res.data || []);
+      if (!res.success) throw new Error('Failed to filter reservations');
+
+      setFilteredReservations(res.data || []);
+      setAppliedFilters(nextFilters);
 
       // If specific event selected, fetch event report
-      if (eventFilter) {
-        const report = await reservationService.getEventReport(eventFilter);
+      if (nextFilters.event_id) {
+        const report = await reservationService.getEventReport(nextFilters.event_id);
         if (report.success) setEventReport(report.data);
       } else {
         setEventReport(null);
@@ -102,31 +130,21 @@ export default function ReportsPage() {
     finally { setRefreshing(false); }
   }, [eventFilter, dateFrom, dateTo]);
 
-  // Auto-refetch when event filter changes
-  useEffect(() => {
-    if (loading) return undefined;
-
-    const timeoutId = window.setTimeout(applyFilters, 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [eventFilter]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const handleApplyClick = () => applyFilters();
 
-  const handleClearFilters = () => {
+  const handleClearFilters = async () => {
     setEventFilter('');
     setDateFrom('');
     setDateTo('');
-    // Reset to all
-    setFilteredReservations(allReservations);
-    setEventReport(null);
+    await applyFilters(EMPTY_FILTERS);
   };
 
   const handleExport = async () => {
     try {
       const filters = {};
-      if (eventFilter) filters.event_id = eventFilter;
-      if (dateFrom) filters.date_from = dateFrom;
-      if (dateTo) filters.date_to = dateTo;
+      if (appliedFilters.event_id) filters.event_id = appliedFilters.event_id;
+      if (appliedFilters.date_from) filters.date_from = appliedFilters.date_from;
+      if (appliedFilters.date_to) filters.date_to = appliedFilters.date_to;
 
       const blob = await reservationService.exportCSV(filters);
       const url = URL.createObjectURL(blob);
@@ -137,28 +155,42 @@ export default function ReportsPage() {
     } catch { toast.error('خطا در خروجی CSV'); }
   };
 
-  const hasActiveFilters = eventFilter || dateFrom || dateTo;
+  const hasActiveFilters = Boolean(appliedFilters.event_id || appliedFilters.date_from || appliedFilters.date_to);
+  const hasPendingChanges = eventFilter !== appliedFilters.event_id
+    || dateFrom !== appliedFilters.date_from
+    || dateTo !== appliedFilters.date_to;
+  const appliedEventTitle = events.find(event => event.id === appliedFilters.event_id)?.title;
 
   // ── Chart Data ──
 
-  // Bar chart: if event selected → show reserved vs available for that event
-  //             else → show global occupancy per event
-  const barData = eventReport ? [
-    { name: 'رزرو شده', value: eventReport.reserved_count },
-    { name: 'آزاد', value: eventReport.available_count },
-  ] : (globalOccupancy ? globalOccupancy.labels.map((l, i) => ({
-    name: l,
-    value: globalOccupancy.data[i] || 0,
-  })) : []);
+  // Applied filters drive every visualization; draft values do not affect the report.
+  const filteredEventData = Object.values(filteredReservations.reduce((result, reservation) => {
+    const name = reservation.event_title || 'رویداد نامشخص';
+    result[name] = result[name] || { name, value: 0 };
+    result[name].value += 1;
+    return result;
+  }, {}));
 
-  // Pie chart: same logic — event-specific or global
-  const pieData = eventReport ? [
-    { name: 'رزرو شده', value: eventReport.reserved_count },
-    { name: 'آزاد', value: eventReport.available_count },
-  ] : (globalOccupancy ? globalOccupancy.labels.map((l, i) => ({
-    name: l,
-    value: globalOccupancy.data[i] || 0,
-  })) : []);
+  const filteredStatusData = Object.values(filteredReservations.reduce((result, reservation) => {
+    const name = STATUS_LABELS[reservation.status] || reservation.status || 'نامشخص';
+    result[name] = result[name] || { name, value: 0 };
+    result[name].value += 1;
+    return result;
+  }, {}));
+
+  const barData = hasActiveFilters
+    ? filteredEventData
+    : (globalOccupancy ? globalOccupancy.labels.map((l, i) => ({
+        name: l,
+        value: globalOccupancy.data[i] || 0,
+      })) : []);
+
+  const pieData = hasActiveFilters
+    ? filteredStatusData
+    : (globalOccupancy ? globalOccupancy.labels.map((l, i) => ({
+        name: l,
+        value: globalOccupancy.data[i] || 0,
+      })) : []);
 
   return (
     <div className="page-shell">
@@ -176,6 +208,30 @@ export default function ReportsPage() {
 
         {/* Filters */}
         <div className="bg-surface-card rounded-2xl border border-line p-4 sm:p-5 mb-8">
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand-border bg-brand-soft">
+                <FunnelIcon className="h-5 w-5 text-brand-accent" />
+              </div>
+              <div>
+                <h3 className="font-bold text-ink-strong">فیلتر گزارش</h3>
+                <p className="mt-0.5 text-xs text-ink-muted">ابتدا معیارها را انتخاب کنید، سپس «نمایش نتایج» را بزنید.</p>
+              </div>
+            </div>
+            {hasActiveFilters && (
+              <Button
+                onClick={handleClearFilters}
+                disabled={refreshing}
+                variant="ghost"
+                size="sm"
+                className="self-start !text-danger-ink sm:self-auto"
+              >
+                <XMarkIcon className="h-4 w-4" />
+                پاک کردن همه فیلترها
+              </Button>
+            )}
+          </div>
+
           <div className="grid sm:grid-cols-4 gap-4 items-end">
             <div>
               <label className="block text-xs text-ink-muted mb-1.5">رویداد</label>
@@ -200,43 +256,61 @@ export default function ReportsPage() {
               <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
                 className="input-field ltr text-left" dir="ltr" />
             </div>
-            <div className="flex items-center gap-2">
+            <div>
               <Button onClick={handleApplyClick} disabled={refreshing} variant="primary" size="sm" fullWidth>
                 <MagnifyingGlassIcon className="w-4 h-4" />
-                {refreshing ? 'در حال جستجو...' : 'اعمال فیلتر'}
+                {refreshing ? 'در حال به‌روزرسانی...' : hasPendingChanges ? 'نمایش نتایج' : 'به‌روزرسانی گزارش'}
               </Button>
-              {hasActiveFilters && (
-                <Button onClick={handleClearFilters} variant="ghost" size="sm" className="!px-3" title="پاک کردن فیلترها">
-                  <XMarkIcon className="w-4 h-4" />
-                </Button>
-              )}
             </div>
           </div>
 
-          {/* Active filter indicator */}
-          {hasActiveFilters && (
-            <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-line">
-              <span className="text-xs text-ink-faint">فیلترهای فعال:</span>
-              {eventFilter && (
-                <span className="inline-flex items-center gap-1 text-xs bg-brand-soft text-brand-ink px-2.5 py-1 rounded-full">
-                  رویداد: {events.find(e => e.id === eventFilter)?.title || '...'}
-                </span>
-              )}
-              {dateFrom && (
-                <span className="inline-flex items-center gap-1 text-xs bg-warning-soft text-warning-ink px-2.5 py-1 rounded-full">
-                  از: {dateFrom}
-                </span>
-              )}
-              {dateTo && (
-                <span className="inline-flex items-center gap-1 text-xs bg-warning-soft text-warning-ink px-2.5 py-1 rounded-full">
-                  تا: {dateTo}
-                </span>
-              )}
-              <span className="text-xs text-ink-faint mr-auto">
-                {filteredReservations.length} نتیجه
-              </span>
+          {hasPendingChanges && (
+            <div role="status" className="mt-4 rounded-xl border border-warning-border bg-warning-soft px-4 py-2.5 text-xs text-warning-ink">
+              تغییرات جدید هنوز اعمال نشده‌اند؛ برای به‌روزرسانی نمودارها و جدول، دکمه «نمایش نتایج» را بزنید.
             </div>
           )}
+
+          {/* Applied filter summary */}
+          <div className={`mt-4 rounded-xl border px-4 py-3 ${hasActiveFilters ? 'border-success-border bg-success-soft' : 'border-line bg-surface-alt'}`}>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 items-start gap-3">
+                <CheckCircleIcon className={`mt-0.5 h-5 w-5 shrink-0 ${hasActiveFilters ? 'text-success-ink' : 'text-ink-faint'}`} />
+                <div className="min-w-0">
+                  <p className={`text-sm font-bold ${hasActiveFilters ? 'text-success-ink' : 'text-ink'}`}>
+                    {hasActiveFilters ? 'فیلتر با موفقیت اعمال شده است' : 'در حال نمایش همه رزروها'}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-ink-muted">
+                    {hasActiveFilters
+                      ? 'نمودارها، جدول جزئیات و خروجی CSV بر اساس فیلترهای زیر نمایش داده می‌شوند.'
+                      : 'هیچ محدودیتی روی رویداد یا تاریخ رزرو اعمال نشده است.'}
+                  </p>
+                </div>
+              </div>
+              <span className="sm:mr-auto inline-flex w-fit items-center rounded-full border border-line-strong bg-surface-card px-3 py-1 text-xs font-bold text-ink-strong tabular-nums">
+                {filteredReservations.length.toLocaleString('fa-IR')} نتیجه
+              </span>
+            </div>
+
+            {hasActiveFilters && (
+              <div className="mt-3 flex flex-wrap gap-2 border-t border-success-border/60 pt-3">
+                {appliedFilters.event_id && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-border bg-brand-soft px-3 py-1 text-xs font-medium text-brand-ink">
+                    رویداد: {appliedEventTitle || 'رویداد انتخاب‌شده'}
+                  </span>
+                )}
+                {appliedFilters.date_from && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-warning-border bg-warning-soft px-3 py-1 text-xs font-medium text-warning-ink">
+                    از {formatFilterDate(appliedFilters.date_from)}
+                  </span>
+                )}
+                {appliedFilters.date_to && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-warning-border bg-warning-soft px-3 py-1 text-xs font-medium text-warning-ink">
+                    تا پایان {formatFilterDate(appliedFilters.date_to)}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {loading ? <TableSkeleton rows={4} cols={4} /> : (
@@ -246,9 +320,7 @@ export default function ReportsPage() {
               {/* Bar Chart */}
               <div className="card p-6">
                 <h3 className="text-lg font-bold text-ink-strong mb-6">
-                  {eventReport
-                    ? `رزروهای: ${eventReport.event_title}`
-                    : 'مقایسه رزروها به تفکیک رویداد'}
+                  {hasActiveFilters ? 'رزروهای منطبق به تفکیک رویداد' : 'مقایسه رزروها به تفکیک رویداد'}
                 </h3>
                 {barData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
@@ -268,9 +340,7 @@ export default function ReportsPage() {
               {/* Donut Chart + Legend */}
               <div className="card p-6">
                 <h3 className="text-lg font-bold text-ink-strong mb-4">
-                  {eventReport
-                    ? `وضعیت ظرفیت: ${eventReport.event_title}`
-                    : 'توزیع رزروها'}
+                  {hasActiveFilters ? 'وضعیت رزروهای منطبق' : 'توزیع رزروها'}
                 </h3>
                 {pieData.length > 0 ? (
                   <div className="flex flex-col lg:flex-row items-center gap-6">
@@ -369,7 +439,7 @@ export default function ReportsPage() {
             )}
 
             {/* Trend */}
-            {!eventReport && trend.length > 0 && (
+            {!hasActiveFilters && trend.length > 0 && (
               <div className="card p-6 mb-8">
                 <h3 className="text-lg font-bold text-ink-strong mb-6">روند رزروها (۷ روز)</h3>
                 <ResponsiveContainer width="100%" height={240}>

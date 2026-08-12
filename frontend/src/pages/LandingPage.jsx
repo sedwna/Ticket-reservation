@@ -125,7 +125,7 @@ export default function LandingPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-              <Button to="/register" variant="secondary" size="lg" className="!shadow-lg hover:!shadow-xl !font-bold !text-white">
+              <Button to="/register" variant="secondary" size="lg" className="!shadow-lg hover:!shadow-xl !font-bold">
                 شروع کنید
                 <ArrowLeftIcon className="w-5 h-5" />
               </Button>

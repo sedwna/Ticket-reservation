@@ -91,7 +91,12 @@ func (r *ReservationRepository) FindAll(filters map[string]interface{}) ([]model
 		query = query.Where("reserved_at >= ?", dateFrom)
 	}
 	if dateTo, ok := filters["date_to"]; ok && dateTo != "" {
-		query = query.Where("reserved_at <= ?", dateTo)
+		dateToString, isString := dateTo.(string)
+		if parsedDate, err := time.Parse("2006-01-02", dateToString); isString && err == nil {
+			query = query.Where("reserved_at < ?", parsedDate.AddDate(0, 0, 1).Format("2006-01-02"))
+		} else {
+			query = query.Where("reserved_at <= ?", dateTo)
+		}
 	}
 	if status, ok := filters["status"]; ok && status != "" {
 		query = query.Where("status = ?", status)
