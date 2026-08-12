@@ -101,7 +101,7 @@ async function main() {
       { method: 'POST', path: '/api/v1/admin/events', token },
       ev
     );
-    console.log(`✅ ${i + 1}/5: ${ev.title} — ${result.message || 'created'}`);
+    console.log(`${i + 1}/5: ${ev.title} — ${result.message || 'created'}`);
   }
 
   // Verify
@@ -110,7 +110,7 @@ async function main() {
   );
   console.log('\n═══ Seeded Events ═══');
   (allEvents.data || []).forEach(e => {
-    console.log(`  📅 ${e.event_date} | ${e.total_capacity} seats | ${e.title}`);
+    console.log(`  ${e.event_date} | ${e.total_capacity} seats | ${e.title}`);
   });
   console.log('══════════════════════');
 }

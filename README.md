@@ -2,7 +2,7 @@
 
 **Seat Reservation System - Amphi Theater of Faculty of Engineering, Bu-Ali Sina University**
 
-## 📋 Overview
+## Overview
 
 A full-stack web application for online seat reservation in the university amphitheater. This system replaces the traditional manual process with a modern, secure, and user-friendly platform.
 
@@ -27,7 +27,7 @@ A full-stack web application for online seat reservation in the university amphi
 └─────────────────────┘
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -79,7 +79,7 @@ npm run dev
 - Email: `admin@basu.ac.ir`
 - Password: `REMOVED_SECRET`
 
-## 📚 API Endpoints
+## API Endpoints
 
 ### Auth
 | Method | Endpoint | Description |
@@ -117,7 +117,7 @@ npm run dev
 | GET | `/api/v1/admin/reports/events/:id` | Event report |
 | GET | `/api/v1/admin/reports/export` | Export CSV |
 
-## 🎯 Features
+## Features
 
 ### User Features
 - Register & Login with JWT authentication
@@ -146,7 +146,7 @@ npm run dev
 - Fully responsive design
 - Docker containerization
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Ticket-reservation/
@@ -177,7 +177,7 @@ Ticket-reservation/
 └── README.md
 ```
 
-## 🔒 Security
+## Security
 
 - Passwords hashed with bcrypt
 - JWT tokens with configurable expiry
@@ -186,7 +186,7 @@ Ticket-reservation/
 - CORS policy configured for trusted origins
 - Input validation on both client and server
 
-## 📄 License
+## License
 
 This project was developed as a university course project at Bu-Ali Sina University, Faculty of Engineering.
 
