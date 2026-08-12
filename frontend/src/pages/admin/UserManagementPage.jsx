@@ -6,6 +6,7 @@ import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
+import Button from '../../components/common/Button';
 import { TableSkeleton } from '../../components/common/LoadingSkeleton';
 
 export default function UserManagementPage() {
@@ -111,9 +112,9 @@ export default function UserManagementPage() {
                       </button>
                     </td>
                     <td className="py-3 px-4">
-                      <button onClick={() => setRoleModal(u)} className="btn-icon !w-8 !h-8 !rounded-lg" title="تغییر نقش">
+                      <Button onClick={() => setRoleModal(u)} variant="icon" size="icon" className="!w-8 !h-8 !rounded-lg" title="تغییر نقش">
                         <ArrowPathIcon className="w-4 h-4" />
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -136,8 +137,8 @@ export default function UserManagementPage() {
               </div>
             </div>
             <div className="flex gap-3 justify-center">
-              <button onClick={() => setRoleModal(null)} className="btn-ghost">انصراف</button>
-              <button onClick={changeRole} disabled={roleLoading} className="btn-primary">{roleLoading ? 'در حال تغییر...' : 'تأیید'}</button>
+              <Button onClick={() => setRoleModal(null)} variant="ghost" size="md">انصراف</Button>
+              <Button onClick={changeRole} disabled={roleLoading} variant="primary" size="md">{roleLoading ? 'در حال تغییر...' : 'تأیید'}</Button>
             </div>
           </div>
         )}

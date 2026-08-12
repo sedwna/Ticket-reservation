@@ -11,6 +11,7 @@ import Footer from '../../components/layout/Footer';
 import Badge from '../../components/common/Badge';
 import EmptyState from '../../components/common/EmptyState';
 import Modal from '../../components/common/Modal';
+import Button from '../../components/common/Button';
 import { TableSkeleton } from '../../components/common/LoadingSkeleton';
 
 const DEFAULT_ROW = { seats: 10, seat_type: 'REGULAR' };
@@ -187,9 +188,9 @@ export default function EventManagementPage() {
             <h2 className="text-3xl font-extrabold text-slate-900">مدیریت رویدادها</h2>
             <p className="text-slate-500 mt-1">ایجاد، ویرایش و حذف رویدادهای سالن</p>
           </div>
-          <button onClick={openCreate} className="btn-primary">
+          <Button onClick={openCreate} variant="primary" size="md">
             <PlusIcon className="w-5 h-5" /> افزودن رویداد
-          </button>
+          </Button>
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-100 p-4 mb-6 flex flex-col sm:flex-row gap-3">
@@ -254,8 +255,8 @@ export default function EventManagementPage() {
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex gap-1">
-                        <button onClick={() => openEdit(e)} className="btn-icon !w-8 !h-8 !rounded-lg"><PencilSquareIcon className="w-4 h-4" /></button>
-                        <button onClick={() => setDeleteModal(e)} className="btn-icon !w-8 !h-8 !rounded-lg !text-red-400 hover:!text-red-600 hover:!bg-red-50"><TrashIcon className="w-4 h-4" /></button>
+                        <Button onClick={() => openEdit(e)} variant="icon" size="icon" className="!w-8 !h-8 !rounded-lg"><PencilSquareIcon className="w-4 h-4" /></Button>
+                        <Button onClick={() => setDeleteModal(e)} variant="icon" size="icon" className="!w-8 !h-8 !rounded-lg !text-red-400 hover:!text-red-600 hover:!bg-red-50"><TrashIcon className="w-4 h-4" /></Button>
                       </div>
                     </td>
                   </tr>
@@ -318,9 +319,9 @@ export default function EventManagementPage() {
                 <h4 className="font-bold text-slate-800">پیکربندی سالن</h4>
                 <div className="flex items-center gap-3">
                   {!useLegacy && (
-                    <button type="button" onClick={addRow} className="text-xs btn-ghost !py-1.5 !px-3 !text-brand-600 hover:!bg-brand-50">
+                    <Button type="button" onClick={addRow} variant="ghost" size="sm" className="!py-1.5 !px-3 !text-brand-600 hover:!bg-brand-50">
                       <PlusIcon className="w-3.5 h-3.5" /> افزودن ردیف
-                    </button>
+                    </Button>
                   )}
                   <label className="flex items-center gap-2 text-xs text-slate-500 cursor-pointer">
                     <input type="checkbox" checked={useLegacy} onChange={(e) => setUseLegacy(e.target.checked)} className="rounded" />
@@ -374,10 +375,10 @@ export default function EventManagementPage() {
           )}
 
           <div className="flex gap-3 justify-end mt-6">
-            <button type="button" onClick={() => setFormModal(false)} className="btn-ghost">انصراف</button>
-            <button type="submit" disabled={formLoading || uploadingPoster} className="btn-primary">
+            <Button type="button" onClick={() => setFormModal(false)} variant="ghost" size="md">انصراف</Button>
+            <Button type="submit" disabled={formLoading || uploadingPoster} variant="primary" size="md">
               {formLoading ? 'در حال ذخیره...' : editing ? 'ذخیره' : 'ایجاد'}
-            </button>
+            </Button>
           </div>
         </form>
       </Modal>
@@ -388,8 +389,8 @@ export default function EventManagementPage() {
           <p className="text-slate-600 mb-4">آیا از حذف این رویداد اطمینان دارید؟</p>
           {deleteModal && <div className="bg-red-50 rounded-xl p-4 mb-6 text-sm"><p className="font-bold">{deleteModal.title}</p></div>}
           <div className="flex gap-3 justify-center">
-            <button onClick={() => setDeleteModal(null)} className="btn-ghost">انصراف</button>
-            <button onClick={handleDelete} disabled={deleting} className="btn-danger">{deleting ? 'حذف...' : 'حذف'}</button>
+            <Button onClick={() => setDeleteModal(null)} variant="ghost" size="md">انصراف</Button>
+            <Button onClick={handleDelete} disabled={deleting} variant="danger" size="md">{deleting ? 'حذف...' : 'حذف'}</Button>
           </div>
         </div>
       </Modal>

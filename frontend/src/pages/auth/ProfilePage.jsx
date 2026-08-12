@@ -9,6 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import authService from '../../services/authService';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
+import Button from '../../components/common/Button';
 
 export default function ProfilePage() {
   const { user, login } = useAuth();
@@ -80,9 +81,14 @@ export default function ProfilePage() {
     <div className="page-shell">
       <Navbar />
       <main className="page-content max-w-3xl animate-fade-in-up">
-        <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-600 mb-6">
+        <Button
+          onClick={() => navigate(-1)}
+          variant="ghost"
+          size="sm"
+          className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 mb-6"
+        >
           <ArrowRightIcon className="w-4 h-4" /> بازگشت
-        </button>
+        </Button>
 
         {/* Profile Header */}
         <div className="card p-8 mb-6">
@@ -101,10 +107,10 @@ export default function ProfilePage() {
                 <span className="text-xs text-slate-400">{user.is_active ? 'فعال' : 'غیرفعال'}</span>
               </div>
             </div>
-            <button onClick={() => setEditing(!editing)} className="btn-outline text-sm">
+            <Button onClick={() => setEditing(!editing)} variant="outline" size="sm">
               <PencilSquareIcon className="w-4 h-4" />
               ویرایش پروفایل
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -126,8 +132,8 @@ export default function ProfilePage() {
                 <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="input-field ltr text-left" dir="ltr" />
               </div>
               <div className="flex gap-3">
-                <button type="submit" disabled={saving} className="btn-primary"><CheckIcon className="w-4 h-4" />{saving ? 'ذخیره...' : 'ذخیره'}</button>
-                <button type="button" onClick={() => { setEditing(false); setForm({ first_name: user.first_name, last_name: user.last_name, email: user.email }); }} className="btn-ghost"><XMarkIcon className="w-4 h-4" />انصراف</button>
+                <Button type="submit" disabled={saving} variant="primary" size="md"><CheckIcon className="w-4 h-4" />{saving ? 'ذخیره...' : 'ذخیره'}</Button>
+                <Button type="button" onClick={() => { setEditing(false); setForm({ first_name: user.first_name, last_name: user.last_name, email: user.email }); }} variant="ghost" size="md"><XMarkIcon className="w-4 h-4" />انصراف</Button>
               </div>
             </form>
           </div>
@@ -161,7 +167,7 @@ export default function ProfilePage() {
                   <p className="text-xs text-slate-400">رمز عبور</p>
                   <p className="font-medium text-slate-800">••••••••</p>
                 </div>
-                <button onClick={() => setPwModal(true)} className="btn-ghost text-sm">تغییر</button>
+                <Button onClick={() => setPwModal(true)} variant="ghost" size="sm">تغییر</Button>
               </div>
             </div>
           </div>
@@ -187,8 +193,8 @@ export default function ProfilePage() {
                 <input type="password" value={pwForm.confirm} onChange={e => setPwForm({...pwForm, confirm: e.target.value})} className={`input-field ltr text-left ${pwForm.confirm && pwForm.new !== pwForm.confirm ? 'border-red-300' : ''}`} dir="ltr" />
               </div>
               <div className="flex gap-3">
-                <button type="submit" disabled={pwSaving} className="btn-primary"><CheckIcon className="w-4 h-4" />{pwSaving ? 'ذخیره...' : 'ذخیره'}</button>
-                <button type="button" onClick={() => { setPwModal(false); setPwForm({ old: '', new: '', confirm: '' }); }} className="btn-ghost">انصراف</button>
+                <Button type="submit" disabled={pwSaving} variant="primary" size="md"><CheckIcon className="w-4 h-4" />{pwSaving ? 'ذخیره...' : 'ذخیره'}</Button>
+                <Button type="button" onClick={() => { setPwModal(false); setPwForm({ old: '', new: '', confirm: '' }); }} variant="ghost" size="md">انصراف</Button>
               </div>
             </form>
           </div>

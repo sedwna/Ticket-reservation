@@ -11,6 +11,7 @@ import EventManagementPage from './pages/admin/EventManagementPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
 import ReportsPage from './pages/admin/ReportsPage';
 import ProfilePage from './pages/auth/ProfilePage';
+import Button from './components/common/Button';
 import LoadingSkeleton from './components/common/LoadingSkeleton';
 
 function ProtectedRoute({ children, adminOnly = false }) {
@@ -52,7 +53,7 @@ function AppRoutes() {
             </div>
             <h1 className="text-3xl font-extrabold text-slate-900 mb-2">صفحه یافت نشد</h1>
             <p className="text-slate-500 mb-8">صفحه‌ای که به دنبال آن هستید وجود ندارد</p>
-            <a href="/" className="btn-primary">بازگشت به صفحه اصلی</a>
+            <Button to="/" variant="primary" size="md">بازگشت به صفحه اصلی</Button>
           </div>
         </div>
       } />

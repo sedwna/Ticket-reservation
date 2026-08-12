@@ -7,6 +7,7 @@ import reservationService from '../../services/reservationService';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import Modal from '../../components/common/Modal';
+import Button from '../../components/common/Button';
 import { SeatMapSkeleton } from '../../components/common/LoadingSkeleton';
 
 const legendItems = [
@@ -83,7 +84,7 @@ export default function SeatMapPage() {
       <main className="flex-1 flex items-center justify-center">
         <div className="text-center">
           <p className="text-slate-600 text-lg mb-4">رویداد یافت نشد</p>
-          <button onClick={() => navigate('/events')} className="btn-primary">بازگشت</button>
+          <Button onClick={() => navigate('/events')} variant="ghost" size="md">بازگشت</Button>
         </div>
       </main>
     </div>
@@ -96,9 +97,9 @@ export default function SeatMapPage() {
 
         {/* Header */}
         <div className="flex items-start gap-6 mb-8">
-          <button onClick={() => navigate('/events')} className="btn-icon mt-0.5 flex-shrink-0">
+          <Button onClick={() => navigate('/events')} variant="icon" size="icon" className="mt-0.5 flex-shrink-0">
             <ArrowRightIcon className="w-5 h-5" />
-          </button>
+          </Button>
           {seatMap.poster_url && (
             <img src={seatMap.poster_url} alt="" className="w-24 h-24 rounded-2xl object-cover border border-slate-200 shadow-sm flex-shrink-0 hidden sm:block" />
           )}
@@ -180,10 +181,12 @@ export default function SeatMapPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => setSelectedSeat(null)} className="btn-ghost text-sm">انصراف</button>
-                <button onClick={() => setConfirmModal(true)} className="btn-primary text-sm !px-8">
+                <Button onClick={() => setSelectedSeat(null)} variant="ghost" size="sm">
+                  انصراف
+                </Button>
+                <Button onClick={() => setConfirmModal(true)} variant="primary" size="sm" className="!px-8">
                   تأیید رزرو
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -211,8 +214,12 @@ export default function SeatMapPage() {
             </div>
           )}
           <div className="flex gap-3 justify-center mt-6">
-            <button onClick={() => setConfirmModal(false)} className="btn-ghost">انصراف</button>
-            <button onClick={handleReserve} className="btn-primary">تأیید نهایی</button>
+            <Button onClick={() => setConfirmModal(false)} variant="ghost" size="md">
+              انصراف
+            </Button>
+            <Button onClick={handleReserve} variant="primary" size="md">
+              تأیید نهایی
+            </Button>
           </div>
         </div>
       </Modal>
@@ -233,8 +240,12 @@ export default function SeatMapPage() {
             </div>
           )}
           <div className="flex gap-3 justify-center">
-            <button onClick={() => { setSuccessModal(false); navigate('/events'); }} className="btn-ghost">رویدادها</button>
-            <button onClick={() => { setSuccessModal(false); navigate('/my-reservations'); }} className="btn-primary">رزروهای من</button>
+            <Button onClick={() => { setSuccessModal(false); navigate('/events'); }} variant="ghost" size="md">
+              رویدادها
+            </Button>
+            <Button onClick={() => { setSuccessModal(false); navigate('/my-reservations'); }} variant="primary" size="md">
+              رزروهای من
+            </Button>
           </div>
         </div>
       </Modal>

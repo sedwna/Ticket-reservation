@@ -13,6 +13,7 @@ import eventService from '../../services/eventService';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import Badge from '../../components/common/Badge';
+import Button from '../../components/common/Button';
 import { TableSkeleton } from '../../components/common/LoadingSkeleton';
 
 const PIE_COLORS = ['#10b981', '#ef4444', '#f59e0b', '#3b82f6', '#1A3C5E', '#8b5cf6', '#ec4899'];
@@ -145,9 +146,9 @@ export default function ReportsPage() {
             <h2 className="text-3xl font-extrabold text-slate-900">گزارش‌ها</h2>
             <p className="text-slate-500 mt-1">آمار و تحلیل رزروهای سامانه</p>
           </div>
-          <button onClick={handleExport} className="btn-primary">
+          <Button onClick={handleExport} variant="primary" size="md">
             <ArrowDownTrayIcon className="w-5 h-5" /> دانلود CSV
-          </button>
+          </Button>
         </div>
 
         {/* Filters */}
@@ -177,15 +178,14 @@ export default function ReportsPage() {
                 className="input-field ltr text-left" dir="ltr" />
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={handleApplyClick} disabled={refreshing}
-                className="btn-primary !text-sm !py-2.5 flex-1">
+              <Button onClick={handleApplyClick} disabled={refreshing} variant="primary" size="sm" fullWidth>
                 <MagnifyingGlassIcon className="w-4 h-4" />
                 {refreshing ? 'در حال جستجو...' : 'اعمال فیلتر'}
-              </button>
+              </Button>
               {hasActiveFilters && (
-                <button onClick={handleClearFilters} className="btn-ghost !text-sm !py-2.5 !px-3" title="پاک کردن فیلترها">
+                <Button onClick={handleClearFilters} variant="ghost" size="sm" className="!px-3" title="پاک کردن فیلترها">
                   <XMarkIcon className="w-4 h-4" />
-                </button>
+                </Button>
               )}
             </div>
           </div>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import authService from '../../services/authService';
 import toast from 'react-hot-toast';
+import Button from '../../components/common/Button';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 const strengthLabels = ['', 'ضعیف', 'متوسط', 'خوب', 'عالی'];
@@ -67,9 +68,14 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface p-4 py-8">
       <div className="w-full max-w-lg animate-fade-in-up">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-600 transition-colors mb-6">
+        <Button
+          to="/"
+          variant="ghost"
+          size="sm"
+          className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/90 text-slate-600 shadow-sm transition hover:bg-slate-100 mb-6"
+        >
           <ArrowLeftIcon className="w-4 h-4" /> بازگشت
-        </Link>
+        </Button>
 
         <div className="bg-white rounded-2xl shadow-card border border-slate-100 p-8">
           <div className="text-center mb-8">
@@ -137,14 +143,14 @@ export default function RegisterPage() {
               )}
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary w-full !py-3 !text-base !rounded-xl mt-2">
+            <Button type="submit" disabled={loading} variant="primary" size="md" fullWidth className="mt-2">
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   در حال ثبت‌نام...
                 </span>
               ) : 'ایجاد حساب کاربری'}
-            </button>
+            </Button>
           </form>
 
           <p className="text-center mt-6 text-sm text-slate-500">

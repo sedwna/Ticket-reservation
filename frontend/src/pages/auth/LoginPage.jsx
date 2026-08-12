@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import authService from '../../services/authService';
 import toast from 'react-hot-toast';
+import Button from '../../components/common/Button';
 import { EyeIcon, EyeSlashIcon, AcademicCapIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 export default function LoginPage() {
@@ -100,13 +101,15 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
         <div className="w-full max-w-md">
           <div className="flex items-center justify-between mb-6">
-            <Link
+            <Button
               to="/"
-              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/90 px-4 py-2 text-slate-600 shadow-sm transition hover:bg-slate-100"
+              variant="ghost"
+              size="sm"
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/90 text-slate-600 shadow-sm transition hover:bg-slate-100"
             >
               <ArrowLeftIcon className="w-4 h-4" />
               بازگشت
-            </Link>
+            </Button>
             <span className="text-sm text-slate-500">ورود امن به سامانه</span>
           </div>
 
@@ -191,10 +194,12 @@ export default function LoginPage() {
                 )}
               </div>
 
-              <button
+              <Button
                 type="submit"
                 disabled={loading}
-                className="btn-primary w-full !py-3 !text-base !rounded-xl"
+                variant="primary"
+                size="md"
+                fullWidth
                 aria-busy={loading}
               >
                 {loading ? (
@@ -205,7 +210,7 @@ export default function LoginPage() {
                 ) : (
                   'ورود به سامانه'
                 )}
-              </button>
+              </Button>
 
               <div className="flex flex-col items-center gap-3 pt-4 text-sm text-slate-500">
                 <p>اگر هنوز حساب کاربری ندارید،</p>

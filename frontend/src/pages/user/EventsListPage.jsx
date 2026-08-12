@@ -138,16 +138,19 @@ export default function EventsListPage() {
                 </div>
 
                 {/* CTA */}
-                <button
+                <Button
                   onClick={() => navigate(`/events/${event.id}/seats`)}
                   disabled={event.available_count <= 0 || event.status !== 'ACTIVE'}
-                  className="w-full btn-primary !rounded-xl"
+                  variant="primary"
+                  size="md"
+                  fullWidth
+                  className="!rounded-xl"
                 >
                   {event.available_count <= 0 ? 'ظرفیت تکمیل است' :
                    event.status === 'CLOSED' ? 'پایان ثبت‌نام' :
                    event.status === 'CANCELLED' ? 'لغو شده' :
                    event.status !== 'ACTIVE' ? 'برگزار شده' : 'مشاهده و رزرو'}
-                </button>
+                </Button>
                 </div>
               </div>
             ))}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import Button from '../common/Button';
 import { useAuth } from '../../context/AuthContext';
 import {
   TicketIcon, UserCircleIcon, ArrowRightOnRectangleIcon,
@@ -92,27 +93,29 @@ export default function Navbar() {
                       </span>
                     )}
                   </Link>
-                  <button onClick={handleLogout} className="btn-ghost text-sm px-3 py-2">
+                  <Button onClick={handleLogout} variant="ghost" size="sm" className="px-3 py-2">
                     <ArrowRightOnRectangleIcon className="w-4 h-4" />
                     <span className="hidden sm:inline">خروج</span>
-                  </button>
+                  </Button>
                 </>
               ) : (
                 <div className="flex items-center gap-2">
-                  <Link to="/login" className="btn-ghost text-sm">ورود</Link>
-                  <Link to="/register" className="btn-primary text-sm !py-2">ثبت‌نام</Link>
+                  <Button to="/login" variant="ghost" size="sm">ورود</Button>
+                  <Button to="/register" variant="primary" size="sm" className="!py-2">ثبت‌نام</Button>
                 </div>
               )}
 
               {/* Mobile hamburger */}
               {isAuthenticated && (
-                <button
+                <Button
                   onClick={() => setMobileOpen(!mobileOpen)}
-                  className="md:hidden btn-icon"
+                  variant="icon"
+                  size="icon"
+                  className="md:hidden"
                   aria-label="منو"
                 >
                   {mobileOpen ? <XMarkIcon className="w-5 h-5" /> : <Bars3Icon className="w-5 h-5" />}
-                </button>
+                </Button>
               )}
             </div>
           </div>

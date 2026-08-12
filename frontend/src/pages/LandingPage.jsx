@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
+import Button from '../components/common/Button';
 import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
 import {
@@ -94,13 +95,13 @@ export default function LandingPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-              <Link to="/register" className="btn-secondary !px-10 !py-3.5 !text-base !rounded-xl !shadow-lg hover:!shadow-xl !font-bold">
+              <Button to="/register" variant="secondary" size="lg" className="!shadow-lg hover:!shadow-xl !font-bold !text-white">
                 شروع کنید
                 <ArrowLeftIcon className="w-5 h-5" />
-              </Link>
-              <Link to="/login" className="btn-outline !border-white/30 !text-white hover:!bg-white/10 !px-10 !py-3.5 !text-base !rounded-xl !font-bold">
+              </Button>
+              <Button to="/login" variant="outline" size="lg" className="!border-white/30 !text-white hover:!bg-white/10 !font-bold">
                 ورود به سامانه
-              </Link>
+              </Button>
             </div>
 
             {/* Live Stats Bar */}
@@ -171,12 +172,12 @@ export default function LandingPage() {
             ثبت‌نام کنید، رویدادهای فعال را مشاهده کنید و صندلی مورد نظر خود را رزرو کنید
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link to="/register" className="btn-primary !px-10 !py-3.5 !text-base !rounded-xl !font-bold">
+            <Button to="/register" variant="primary" size="lg" className="!px-10 !py-3.5 !text-base !rounded-xl !font-bold">
               ساخت حساب کاربری
-            </Link>
-            <Link to="/login" className="btn-ghost !text-base !font-bold">
+            </Button>
+            <Button to="/login" variant="ghost" size="lg" className="!text-base !font-bold">
               قبلاً ثبت‌نام کرده‌اید؟
-            </Link>
+            </Button>
           </div>
         </div>
       </section>

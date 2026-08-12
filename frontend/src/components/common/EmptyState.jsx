@@ -18,9 +18,9 @@ export default function EmptyState({
         <p className="text-slate-400 text-sm max-w-sm mb-6">{description}</p>
       )}
       {linkTo && linkText && (
-        <Link to={linkTo} className="btn-primary">
+        <Button to={linkTo} variant="primary" size="md">
           {linkText}
-        </Link>
+        </Button>
       )}
     </div>
   );

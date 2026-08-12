@@ -120,9 +120,9 @@ export default function MyReservationsPage() {
                 <div className="flex items-center gap-3 self-end sm:self-center flex-shrink-0">
                   <Badge status={r.status} />
                   {r.status === 'ACTIVE' && (
-                    <button onClick={() => setCancelModal(r)} className="btn-ghost !text-red-500 hover:!bg-red-50 hover:!text-red-600 text-sm">
+                    <Button onClick={() => setCancelModal(r)} variant="ghost" size="sm" className="!text-red-500 hover:!bg-red-50 hover:!text-red-600">
                       لغو
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -144,10 +144,10 @@ export default function MyReservationsPage() {
             </div>
           )}
           <div className="flex gap-3 justify-center">
-            <button onClick={() => setCancelModal(null)} className="btn-ghost">انصراف</button>
-            <button onClick={handleCancel} disabled={cancelling} className="btn-danger">
+            <Button onClick={() => setCancelModal(null)} variant="ghost" size="md">انصراف</Button>
+            <Button onClick={handleCancel} disabled={cancelling} variant="danger" size="md">
               {cancelling ? 'در حال لغو...' : 'تأیید لغو'}
-            </button>
+            </Button>
           </div>
         </div>
       </Modal>
