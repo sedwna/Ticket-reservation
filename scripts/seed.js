@@ -1,62 +1,86 @@
 const http = require('http');
 
-const events = [
-  {
-    title: "سمینار تخصصی هوش مصنوعی و آینده پژوهش",
-    description: "بررسی آخرین دستاوردهای هوش مصنوعی در حوزه پژوهش‌های دانشگاهی، کاربردهای ChatGPT و مدل‌های زبانی بزرگ در تحقیقات علمی، چالش‌های اخلاقی و فرصت‌های پیش رو برای دانشجویان تحصیلات تکمیلی. با حضور اساتید برجسته دانشکده مهندسی.",
-    event_date: "2026-07-05", start_time: "09:00", end_time: "12:00", total_capacity: 60,
-    row_config: [
-      {row_number:1,seats:6,seat_type:"VIP"},{row_number:2,seats:10,seat_type:"VIP"},
-      {row_number:3,seats:12,seat_type:"REGULAR"},{row_number:4,seats:12,seat_type:"REGULAR"},
-      {row_number:5,seats:15,seat_type:"REGULAR"},{row_number:6,seats:15,seat_type:"REGULAR"}
-    ]
-  },
-  {
-    title: "کارگاه عملی React و توسعه وب مدرن",
-    description: "کارگاه یک‌روزه آموزش عملی React ۱۹، Next.js و Tailwind CSS. مباحث شامل Server Components، مدیریت state با Zustand، و ساخت یک پروژه واقعی از صفر تا deploy.",
-    event_date: "2026-07-12", start_time: "14:00", end_time: "18:00", total_capacity: 50,
-    row_config: [
-      {row_number:1,seats:8,seat_type:"REGULAR"},{row_number:2,seats:10,seat_type:"REGULAR"},
-      {row_number:3,seats:10,seat_type:"REGULAR"},{row_number:4,seats:10,seat_type:"REGULAR"},
-      {row_number:5,seats:12,seat_type:"REGULAR"}
-    ]
-  },
-  {
-    title: "جلسه دفاع از پایان‌نامه‌های برتر دانشکده",
-    description: "ارائه و دفاع از پایان‌نامه‌های برتر مقطع کارشناسی ارشد در رشته‌های مهندسی کامپیوتر، برق و عمران.",
-    event_date: "2026-07-20", start_time: "08:30", end_time: "13:00", total_capacity: 75,
-    row_config: [
-      {row_number:1,seats:8,seat_type:"VIP"},{row_number:2,seats:10,seat_type:"VIP"},
-      {row_number:3,seats:13,seat_type:"REGULAR"},{row_number:4,seats:14,seat_type:"REGULAR"},
-      {row_number:5,seats:15,seat_type:"REGULAR"},{row_number:6,seats:15,seat_type:"REGULAR"}
-    ]
-  },
-  {
-    title: "مراسم بزرگداشت روز دانشجو",
-    description: "برنامه فرهنگی و هنری به مناسبت روز دانشجو با اجرای موسیقی زنده، نمایش طنز دانشجویی و تقدیر از دانشجویان ممتاز.",
-    event_date: "2026-08-05", start_time: "16:00", end_time: "20:00", total_capacity: 80,
-    row_config: [
-      {row_number:1,seats:8,seat_type:"VIP"},{row_number:2,seats:12,seat_type:"VIP"},
-      {row_number:3,seats:15,seat_type:"REGULAR"},{row_number:4,seats:15,seat_type:"REGULAR"},
-      {row_number:5,seats:15,seat_type:"REGULAR"},{row_number:6,seats:15,seat_type:"REGULAR"}
-    ]
-  },
-  {
-    title: "دوره آموزشی امنیت سایبری و هک اخلاقی",
-    description: "کارگاه دو روزه آشنایی با مبانی امنیت شبکه، تست نفوذ، مهندسی اجتماعی و راهکارهای محافظت از داده‌ها.",
-    event_date: "2026-08-15", start_time: "09:00", end_time: "17:00", total_capacity: 40,
-    row_config: [
-      {row_number:1,seats:6,seat_type:"VIP"},{row_number:2,seats:8,seat_type:"REGULAR"},
-      {row_number:3,seats:8,seat_type:"REGULAR"},{row_number:4,seats:9,seat_type:"REGULAR"},
-      {row_number:5,seats:9,seat_type:"REGULAR"}
-    ]
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function makeRowConfig(capacity) {
+  const rows = [];
+  let remaining = capacity;
+  let row = 1;
+  while (remaining > 0) {
+    const size = Math.min(remaining, randInt(6, 16));
+    rows.push({ row_number: row, seats: size, seat_type: row <= 2 ? 'VIP' : 'REGULAR' });
+    remaining -= size;
+    row += 1;
   }
+  return rows;
+}
+
+const NUM_EVENTS = 25;
+const NUM_USERS = 80;
+
+const sampleTitles = [
+  'سمینار هوش مصنوعی در پژوهش‌های نوین', 'کارگاه عملی توسعه وب مدرن', 'جلسه دفاع پایان‌نامه‌های منتخب', 'جشن روز دانشجو',
+  'دوره آموزشی امنیت سایبری', 'کنسرت گروه‌های دانشجویی', 'وبینار کارآفرینی و شتابدهی', 'نمایش تئاتر کوتاه دانشجویی',
+  'کارگاه تجربه کاربری (UX)', 'همایش بین‌رشته‌ای علوم و فناوری', 'سمینار رباتیک و اتوماسیون', 'کارگاه داده‌کاوی پیشرفته'
 ];
 
-const usersToCreate = [
-  { student_id: '98123456', first_name: 'رضا', last_name: 'رضایی', email: 'user1@basu.ac.ir', password: 'userpass1' },
-  { student_id: '98123457', first_name: 'سارا', last_name: 'محمدی', email: 'user2@basu.ac.ir', password: 'userpass2' },
+const posters = [
+  'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=900&q=80',
+  'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=900&q=80',
+  'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=900&q=80',
+  'https://images.unsplash.com/photo-1508921912186-1d1a45ebb3c1?auto=format&fit=crop&w=900&q=80',
+  'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=80',
+  'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=900&q=80',
+  'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=80',
 ];
+
+// realistic Persian first/last names with simple latin handles
+const firstNames = [
+  { p: 'رضا', l: 'reza' }, { p: 'سارا', l: 'sara' }, { p: 'مهدی', l: 'mahdi' }, { p: 'محمد', l: 'mohammad' },
+  { p: 'نسترن', l: 'nastaran' }, { p: 'علی', l: 'ali' }, { p: 'نگار', l: 'negar' }, { p: 'حسین', l: 'hossein' },
+  { p: 'پریسا', l: 'parisa' }, { p: 'امیر', l: 'amir' }, { p: 'فرناز', l: 'farnaz' }, { p: 'کاوه', l: 'kaveh' },
+  { p: 'مینا', l: 'mina' }, { p: 'نگین', l: 'negin' }, { p: 'علیرضا', l: 'alireza' }, { p: 'سلمان', l: 'salman' },
+  { p: 'زیبا', l: 'ziba' }, { p: 'نرگس', l: 'narges' }, { p: 'امید', l: 'omid' }, { p: 'بهناز', l: 'behnaz' }
+];
+
+const lastNames = [
+  { p: 'احمدی', l: 'ahmadi' }, { p: 'محمدی', l: 'mohammadi' }, { p: 'رضایی', l: 'rezaei' }, { p: 'کاظمی', l: 'kazemi' },
+  { p: 'کریمی', l: 'karimi' }, { p: 'علوی', l: 'alavi' }, { p: 'سلیمانی', l: 'soleimani' }, { p: 'نصیری', l: 'nasiri' },
+  { p: 'حیدری', l: 'heidari' }, { p: 'موسوی', l: 'mousavi' }, { p: 'کمالی', l: 'kamali' }, { p: 'مرادی', l: 'moradi' },
+  { p: 'شمس', l: 'shams' }, { p: 'آقایی', l: 'aghaei' }, { p: 'برزویی', l: 'barzooei' }, { p: 'پاشایی', l: 'pashaei' }
+];
+
+const usersToCreate = Array.from({ length: NUM_USERS }).map((_, i) => {
+  const fn = firstNames[i % firstNames.length];
+  const ln = lastNames[i % lastNames.length];
+  const idx = Math.floor(i / Math.max(1, firstNames.length)) + 1;
+  const email = `${fn.l}.${ln.l}${idx}@basu.ac.ir`;
+  return {
+    student_id: `9812${(340 + i).toString().padStart(4,'0')}`,
+    first_name: fn.p,
+    last_name: ln.p,
+    email,
+    password: `UserPass!${(i+1)}`,
+  };
+});
+
+const events = Array.from({ length: NUM_EVENTS }).map((_, i) => {
+  const title = sampleTitles[i % sampleTitles.length] + ` #${i + 1}`;
+  const capacity = randInt(60, 220);
+  const row_config = makeRowConfig(capacity);
+  const date = new Date(2026, 6, 1 + i); // July-based dates
+  const dateStr = date.toISOString().slice(0,10);
+  return {
+    title,
+    description: `${title} — یک رویداد نمونه برای پر کردن دیتابیس و تست امکانات سامانه.`,
+    event_date: dateStr,
+    start_time: `${randInt(8,16)}:00`,
+    end_time: `${randInt(17,22)}:00`,
+    total_capacity: capacity,
+    poster_url: posters[i % posters.length],
+    row_config,
+  };
+});
 
 function request(opts, data) {
   return new Promise((resolve, reject) => {
@@ -71,7 +95,9 @@ function request(opts, data) {
     const req = http.request(o, (res) => {
       let b = '';
       res.on('data', c => b += c);
-      res.on('end', () => resolve(JSON.parse(b)));
+      res.on('end', () => {
+        try { resolve(JSON.parse(b)); } catch (e) { resolve({ success: false, raw: b }); }
+      });
     });
     req.on('error', reject);
     if (body) req.write(body);
@@ -80,87 +106,111 @@ function request(opts, data) {
 }
 
 async function main() {
-  // Ensure demo users exist (register if not)
+  console.log('Seeding users...');
   for (const u of usersToCreate) {
     try {
       const reg = await request({ method: 'POST', path: '/api/v1/auth/register' }, { student_id: u.student_id, first_name: u.first_name, last_name: u.last_name, email: u.email, password: u.password });
-      console.log(`Registered user ${u.email}: ${reg.message || 'ok'}`);
-    } catch (e) {
-      console.log(`Register skipped/failed for ${u.email}:`, e.message || e);
-    }
+      if (reg && reg.success) console.log(`Registered ${u.email}`);
+      else console.log(`Register response for ${u.email}:`, reg.message || reg.raw || reg);
+    } catch (e) { console.log(`Register failed for ${u.email}:`, e.message || e); }
   }
 
-  // Login as admin (the backend seeds admin on startup if missing)
-  let token = null;
+  // Login admin
+  let adminToken;
   try {
-    const loginResp = await request(
-      { method: 'POST', path: '/api/v1/auth/login' },
-      { email: 'admin@basu.ac.ir', password: 'REMOVED_SECRET' }
-    );
-    token = loginResp.data.token;
-    console.log('Logged in as admin.');
-  } catch (err) {
-    console.error('Failed to login as admin. Make sure the backend is running and migrations have run.');
-    throw err;
-  }
+    const loginResp = await request({ method: 'POST', path: '/api/v1/auth/login' }, { email: 'admin@basu.ac.ir', password: 'REMOVED_SECRET' });
+    adminToken = loginResp.data.token;
+    console.log('Admin logged in.');
+  } catch (e) { console.error('Admin login failed — ensure backend running and migrations executed.'); throw e; }
 
-  // Clean existing events (delete all)
-  const existingEvents = await request(
-    { method: 'GET', path: '/api/v1/events', token }
-  );
-  const existingIds = (existingEvents.data || []).map(e => {
-    console.log('Deleting old event: ' + e.title);
-    return request({ method: 'DELETE', path: '/api/v1/admin/events/' + e.id, token });
-  });
-  await Promise.all(existingIds);
-  console.log('Old events cleaned.');
+  // Remove existing events
+  try {
+    const existingEvents = await request({ method: 'GET', path: '/api/v1/events', token: adminToken });
+    const deletes = (existingEvents.data || []).map(e => request({ method: 'DELETE', path: '/api/v1/admin/events/' + e.id, token: adminToken }));
+    await Promise.allSettled(deletes);
+    console.log('Old events cleared.');
+  } catch (e) { console.log('Failed to clear events:', e.message || e); }
 
-  // Seed new events
+  // Create events
+  console.log('Creating events...');
+  const createdEvents = [];
   for (let i = 0; i < events.length; i++) {
     const ev = events[i];
-    const result = await request(
-      { method: 'POST', path: '/api/v1/admin/events', token },
-      ev
-    );
-    console.log(`${i + 1}/5: ${ev.title} — ${result.message || 'created'}`);
-  }
-
-  // Verify
-  const allEvents = await request(
-    { method: 'GET', path: '/api/v1/events', token }
-  );
-  console.log('\n═══ Seeded Events ═══');
-  (allEvents.data || []).forEach(e => {
-    console.log(`  ${e.event_date} | ${e.total_capacity} seats | ${e.title}`);
-  });
-  console.log('══════════════════════');
-
-  // Create a few reservations for demo users
-  const createdEvents = allEvents.data || [];
-  for (const u of usersToCreate) {
     try {
-      const login = await request({ method: 'POST', path: '/api/v1/auth/login' }, { email: u.email, password: u.password });
-      const userToken = login.data.token;
-      console.log(`Logged in as ${u.email}`);
-
-      // For first two events, reserve first available seat
-      for (let i = 0; i < Math.min(3, createdEvents.length); i++) {
-        const ev = createdEvents[i];
-        const seats = await request({ method: 'GET', path: `/api/v1/events/${ev.id}/seats`, token });
-        const available = (seats.data || []).filter(s => s.status === 'AVAILABLE');
-        if (available.length === 0) continue;
-        const seat = available[0];
-        try {
-          const res = await request({ method: 'POST', path: '/api/v1/reservations', token: userToken }, { event_id: ev.id, seat_id: seat.id });
-          console.log(`Reserved seat ${seat.seat_label} for ${u.email} on ${ev.title}`);
-        } catch (e) {
-          console.log(`Failed to reserve for ${u.email}:`, e.message || e);
-        }
+      const res = await request({ method: 'POST', path: '/api/v1/admin/events', token: adminToken }, ev);
+      if (res && res.success && res.data) {
+        createdEvents.push(res.data);
+        console.log(`Created event ${i+1}/${events.length}: ${ev.title}`);
+      } else {
+        console.log(`Create event response unexpected for ${ev.title}:`, res.message || res.raw || res);
       }
-    } catch (e) {
-      console.log(`Skipping reservations for ${u.email}: login failed`);
-    }
+    } catch (e) { console.log('Create event failed:', e.message || e); }
   }
+
+  console.log(`Total events created: ${createdEvents.length}`);
+
+  // Prepare seat pool per event
+  const seatsByEvent = {};
+  for (const ev of createdEvents) {
+    try {
+      const seatsResp = await request({ method: 'GET', path: `/api/v1/events/${ev.id}/seats`, token: adminToken });
+      let seatsData = seatsResp.data;
+      // normalize: seat map may come as object with rows
+      if (!seatsData) seatsData = [];
+      if (!Array.isArray(seatsData)) {
+        // try to flatten rows
+        const rows = seatsData.rows || seatsData;
+        const flat = [];
+        for (const k of Object.keys(rows || {})) {
+          const arr = rows[k] || [];
+          for (const s of arr) flat.push(s);
+        }
+        seatsData = flat;
+      }
+      seatsByEvent[ev.id] = seatsData;
+      console.log(`Event ${ev.title} has ${seatsByEvent[ev.id].length} seats`);
+    } catch (e) { seatsByEvent[ev.id] = []; console.log('Failed to fetch seats for', ev.title, e.message || e); }
+  }
+
+  // Create reservations: target ~25 per event when possible
+  console.log('Creating reservations...');
+  const userTokenCache = {};
+
+  // helper to login user once
+  async function getUserToken(email, password) {
+    if (userTokenCache[email]) return userTokenCache[email];
+    try {
+      const r = await request({ method: 'POST', path: '/api/v1/auth/login' }, { email, password });
+      const t = r.data && r.data.token;
+      userTokenCache[email] = t;
+      return t;
+    } catch (e) { return null; }
+  }
+
+  // shuffle users
+  const userPool = usersToCreate.map(u => ({ email: u.email, password: u.password }));
+
+  for (const ev of createdEvents) {
+    const seats = (seatsByEvent[ev.id] || []).filter(s => s.status === 'AVAILABLE');
+    if (seats.length === 0) { console.log(`No available seats for ${ev.title}`); continue; }
+    const target = Math.min(seats.length, randInt(18, 30));
+    let reserved = 0;
+    let userIndex = 0;
+    for (let i = 0; i < seats.length && reserved < target; i++) {
+      const seat = seats[i];
+      const user = userPool[userIndex % userPool.length];
+      userIndex += 1;
+      try {
+        const token = await getUserToken(user.email, user.password);
+        if (!token) { continue; }
+        const res = await request({ method: 'POST', path: '/api/v1/reservations', token }, { event_id: ev.id, seat_id: seat.id });
+        if (res && res.success) { reserved += 1; }
+      } catch (e) { /* ignore individual reservation failures */ }
+    }
+    console.log(`Reserved ${reserved}/${target} seats for event: ${ev.title}`);
+  }
+
+  console.log('Seeding complete.');
 }
 
-main().catch(e => console.error('Error:', e));
+main().catch(e => console.error('Seed error:', e));
