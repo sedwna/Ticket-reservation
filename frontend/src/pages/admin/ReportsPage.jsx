@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import {
   ArrowDownTrayIcon, MagnifyingGlassIcon, FunnelIcon,
-  CalendarDaysIcon, CheckCircleIcon, TicketIcon, XMarkIcon,
+  CalendarDaysIcon, ChartBarIcon, CheckCircleIcon, TicketIcon, XMarkIcon,
 } from '@heroicons/react/24/outline';
 import {
-  BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
+  BarChart, Bar, LabelList, PieChart, Pie, Cell, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import reservationService from '../../services/reservationService';
@@ -40,6 +40,48 @@ const formatFilterDate = (value) => {
     day: 'numeric',
   }).format(date);
 };
+
+const splitChartLabel = (label, maxLineLength = 25) => {
+  const words = String(label || '').trim().split(/\s+/);
+  const lines = [];
+
+  words.forEach((word) => {
+    const currentLine = lines.at(-1);
+    if (!currentLine || `${currentLine} ${word}`.length > maxLineLength) {
+      lines.push(word);
+    } else {
+      lines[lines.length - 1] = `${currentLine} ${word}`;
+    }
+  });
+
+  if (lines.length <= 2) return lines;
+  return [lines[0], `${lines.slice(1).join(' ').slice(0, maxLineLength - 1).trim()}…`];
+};
+
+function EventAxisTick({ x, y, payload }) {
+  const lines = splitChartLabel(payload?.value);
+  const firstLineOffset = lines.length > 1 ? -7 : 4;
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text
+        x={-10}
+        y={firstLineOffset}
+        textAnchor="end"
+        fill={chartColors.axis}
+        fontSize={11.5}
+        fontFamily="Vazirmatn, Tahoma, sans-serif"
+        direction="rtl"
+      >
+        {lines.map((line, index) => (
+          <tspan key={`${line}-${index}`} x={-10} dy={index === 0 ? 0 : 16}>
+            {line}
+          </tspan>
+        ))}
+      </text>
+    </g>
+  );
+}
 
 export default function ReportsPage() {
   // Filter state
@@ -185,6 +227,12 @@ export default function ReportsPage() {
         value: globalOccupancy.data[i] || 0,
       })) : []);
 
+  const sortedBarData = [...barData].sort((first, second) => (
+    second.value - first.value || first.name.localeCompare(second.name, 'fa')
+  ));
+  const barChartHeight = Math.max(340, (sortedBarData.length * 46) + 48);
+  const totalBarReservations = sortedBarData.reduce((total, item) => total + item.value, 0);
+
   const pieData = hasActiveFilters
     ? filteredStatusData
     : (globalOccupancy ? globalOccupancy.labels.map((l, i) => ({
@@ -319,19 +367,105 @@ export default function ReportsPage() {
             <div className="grid lg:grid-cols-2 gap-6 mb-8">
               {/* Bar Chart */}
               <div className="card p-6">
-                <h3 className="text-lg font-bold text-ink-strong mb-6">
-                  {hasActiveFilters ? 'رزروهای منطبق به تفکیک رویداد' : 'مقایسه رزروها به تفکیک رویداد'}
-                </h3>
-                {barData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={barData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} vertical={false} />
-                      <XAxis dataKey="name" stroke={chartColors.axis} fontSize={11} tickLine={false} axisLine={false} />
-                      <YAxis stroke={chartColors.axis} fontSize={11} allowDecimals={false} tickLine={false} axisLine={false} />
-                      <Tooltip contentStyle={chartTooltipStyle} labelStyle={chartTooltipLabelStyle} />
-                      <Bar dataKey="value" fill={chartColors.primary} radius={[6, 6, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand-border bg-brand-soft">
+                      <ChartBarIcon className="h-5 w-5 text-brand-accent" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-bold text-ink-strong">
+                        {hasActiveFilters ? 'رزروهای منطبق به تفکیک رویداد' : 'مقایسه رزروها به تفکیک رویداد'}
+                      </h3>
+                      <p className="mt-1 text-xs leading-5 text-ink-muted">
+                        رویدادها بر اساس تعداد رزرو مرتب شده‌اند؛ برای جزئیات روی هر میله مکث کنید.
+                      </p>
+                    </div>
+                  </div>
+                  {sortedBarData.length > 0 && (
+                    <div className="flex shrink-0 items-center gap-2 text-xs">
+                      <span className="rounded-full border border-line-strong bg-surface-alt px-2.5 py-1 font-medium text-ink-muted">
+                        {sortedBarData.length.toLocaleString('fa-IR')} رویداد
+                      </span>
+                      <span className="rounded-full border border-brand-border bg-brand-soft px-2.5 py-1 font-bold text-brand-ink">
+                        {totalBarReservations.toLocaleString('fa-IR')} رزرو
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {sortedBarData.length > 0 ? (
+                  <div className="-mx-2 overflow-x-auto pb-2" dir="ltr">
+                    <div className="min-w-[540px] px-2" style={{ height: barChartHeight }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={sortedBarData}
+                          layout="vertical"
+                          margin={{ top: 6, right: 50, bottom: 6, left: 8 }}
+                          barCategoryGap="24%"
+                          accessibilityLayer
+                        >
+                          <defs>
+                            <linearGradient id="reportBarGradient" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="0%" stopColor={chartColors.primary} stopOpacity={0.72} />
+                              <stop offset="100%" stopColor={chartColors.accent} stopOpacity={0.96} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid
+                            strokeDasharray="4 5"
+                            stroke={chartColors.grid}
+                            horizontal={false}
+                            vertical
+                          />
+                          <XAxis
+                            type="number"
+                            allowDecimals={false}
+                            tickLine={false}
+                            axisLine={false}
+                            tick={{ fill: chartColors.axis, fontSize: 11 }}
+                            tickFormatter={(value) => Number(value).toLocaleString('fa-IR')}
+                            domain={[0, (dataMax) => Math.max(1, Math.ceil(dataMax * 1.22))]}
+                          />
+                          <YAxis
+                            type="category"
+                            dataKey="name"
+                            width={190}
+                            interval={0}
+                            tickLine={false}
+                            axisLine={false}
+                            tick={<EventAxisTick />}
+                          />
+                          <Tooltip
+                            cursor={{ fill: 'var(--color-brand-soft)', opacity: 0.45 }}
+                            contentStyle={chartTooltipStyle}
+                            labelStyle={chartTooltipLabelStyle}
+                            wrapperStyle={{ direction: 'rtl' }}
+                            formatter={(value) => [`${Number(value).toLocaleString('fa-IR')} رزرو`, 'تعداد']}
+                          />
+                          <Bar
+                            dataKey="value"
+                            name="تعداد رزرو"
+                            fill="url(#reportBarGradient)"
+                            radius={[0, 8, 8, 0]}
+                            minPointSize={6}
+                            maxBarSize={26}
+                            background={{ fill: 'var(--color-surface-muted)', opacity: 0.52, radius: 8 }}
+                            activeBar={{ fill: chartColors.accent, opacity: 1 }}
+                            animationDuration={750}
+                            animationEasing="ease-out"
+                          >
+                            <LabelList
+                              dataKey="value"
+                              position="right"
+                              fill="var(--color-ink-strong)"
+                              fontSize={11.5}
+                              fontWeight={700}
+                              formatter={(value) => Number(value).toLocaleString('fa-IR')}
+                            />
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
                 ) : (
                   <p className="text-ink-faint text-center py-24">داده‌ای برای نمایش وجود ندارد</p>
                 )}

@@ -94,6 +94,12 @@ func (s *AdminUserService) ChangeUserRole(userID uuid.UUID, role string, adminID
 		return errors.New("نمی‌توانید نقش خود را تغییر دهید")
 	}
 
+	// Inactive accounts must be activated before receiving admin privileges.
+	// Demoting an already-invalid inactive admin remains allowed so the state can be repaired.
+	if role == "ADMIN" && user.Role != "ADMIN" && !user.IsActive {
+		return errors.New("کاربر غیرفعال نمی‌تواند مدیر شود؛ ابتدا حساب کاربر را فعال کنید")
+	}
+
 	if err := s.userRepo.ChangeRole(userID, role); err != nil {
 		return fmt.Errorf("failed to change role: %w", err)
 	}

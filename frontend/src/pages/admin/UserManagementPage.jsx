@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
   ArrowPathIcon,
+  LockClosedIcon,
   MagnifyingGlassIcon,
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
@@ -121,6 +122,12 @@ export default function UserManagementPage() {
     const newRole = selectedUser.role === 'ADMIN' ? 'USER' : 'ADMIN';
     const fullName = getFullName(selectedUser);
 
+    if (newRole === 'ADMIN' && !selectedUser.is_active) {
+      toast.error('برای مدیر کردن این کاربر، ابتدا حساب او را فعال کنید');
+      setRoleModal(null);
+      return;
+    }
+
     setRoleLoading(true);
 
     try {
@@ -230,6 +237,10 @@ export default function UserManagementPage() {
                   const fullName = getFullName(user);
                   const statusIsLoading = statusLoadingId === user.id;
                   const anyStatusIsLoading = statusLoadingId !== null;
+                  const rolePromotionBlocked = !user.is_active && user.role !== 'ADMIN';
+                  const roleActionTitle = rolePromotionBlocked
+                    ? 'برای مدیر کردن، ابتدا حساب کاربر را فعال کنید'
+                    : `تغییر نقش ${fullName}`;
 
                   return (
                     <tr
@@ -276,18 +287,26 @@ export default function UserManagementPage() {
                         </button>
                       </td>
                       <td className="px-4 py-3">
-                        <Button
-                          type="button"
-                          onClick={() => setRoleModal(user)}
-                          disabled={anyStatusIsLoading || roleLoading}
-                          variant="icon"
-                          size="icon"
-                          className="!h-8 !w-8 !rounded-lg"
-                          title={`تغییر نقش ${fullName}`}
-                          aria-label={`تغییر نقش ${fullName}`}
+                        <span
+                          className="inline-flex"
+                          title={roleActionTitle}
                         >
-                          <ArrowPathIcon aria-hidden="true" className="h-4 w-4" />
-                        </Button>
+                          <Button
+                            type="button"
+                            onClick={() => setRoleModal(user)}
+                            disabled={rolePromotionBlocked || anyStatusIsLoading || roleLoading}
+                            variant="icon"
+                            size="icon"
+                            className={`!h-8 !w-8 !rounded-lg disabled:cursor-not-allowed disabled:opacity-45 ${rolePromotionBlocked ? '!bg-danger-soft !text-danger-ink' : ''}`}
+                            aria-label={roleActionTitle}
+                          >
+                            {rolePromotionBlocked ? (
+                              <LockClosedIcon aria-hidden="true" className="h-4 w-4" />
+                            ) : (
+                              <ArrowPathIcon aria-hidden="true" className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </span>
                       </td>
                     </tr>
                   );
