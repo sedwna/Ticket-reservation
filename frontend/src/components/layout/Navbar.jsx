@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Button from '../common/Button';
-import { useAuth } from '../../context/AuthContext';
+import ThemeToggle from '../common/ThemeToggle';
+import { useAuth } from '../../context/authContext';
 import {
   TicketIcon, UserCircleIcon, ArrowRightOnRectangleIcon,
   Squares2X2Icon, CalendarDaysIcon, UsersIcon,
@@ -39,7 +40,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav role="navigation" aria-label="Main navigation" className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-sm">
+      <nav role="navigation" aria-label="Main navigation" className="sticky top-0 z-50 border-b border-line/80 bg-surface-card/80 shadow-sm backdrop-blur-xl supports-[backdrop-filter]:bg-surface-card/70">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
 
@@ -52,8 +53,8 @@ export default function Navbar() {
                 <AcademicCapIcon className="w-5 h-5" />
               </div>
               <div className="hidden sm:block">
-                <h1 className="text-base font-bold text-slate-800 leading-tight">سامانه رزرو صندلی</h1>
-                <p className="text-xs text-slate-400 leading-tight">آمفی‌تئاتر دانشکده مهندسی</p>
+                <h1 className="text-base font-bold text-ink-strong leading-tight">سامانه رزرو صندلی</h1>
+                <p className="text-xs text-ink-faint leading-tight">آمفی‌تئاتر دانشکده مهندسی</p>
               </div>
             </Link>
 
@@ -66,8 +67,8 @@ export default function Navbar() {
                     to={link.to}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                       isActive(link.to)
-                        ? 'bg-brand-50 text-brand-800'
-                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                        ? 'bg-brand-soft text-brand-ink'
+                        : 'text-ink-muted hover:text-ink hover:bg-surface-alt'
                     }`}
                   >
                     <link.icon className="w-4 h-4" />
@@ -79,16 +80,17 @@ export default function Navbar() {
 
             {/* Right section */}
             <div className="flex items-center gap-3">
+              <ThemeToggle />
               {isAuthenticated ? (
                 <>
                   {/* User pill */}
-                  <Link to="/profile" className="hidden sm:flex items-center gap-2.5 bg-slate-50 rounded-xl px-3 py-1.5 border border-slate-100 hover:bg-slate-100 transition-colors cursor-pointer">
-                    <UserCircleIcon className="w-5 h-5 text-slate-400" />
-                    <span className="text-sm font-medium text-slate-700">
+                  <Link to="/profile" className="hidden sm:flex items-center gap-2.5 bg-surface-alt rounded-xl px-3 py-1.5 border border-line hover:bg-surface-muted transition-colors cursor-pointer">
+                    <UserCircleIcon className="w-5 h-5 text-ink-faint" />
+                    <span className="text-sm font-medium text-ink">
                       {user?.first_name} {user?.last_name}
                     </span>
                     {isAdmin && (
-                      <span className="text-[10px] font-semibold bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-semibold bg-brand-muted text-brand-ink px-2 py-0.5 rounded-full">
                         مدیر
                       </span>
                     )}
@@ -123,7 +125,7 @@ export default function Navbar() {
 
         {/* Mobile Drawer */}
         {mobileOpen && isAuthenticated && (
-          <div id="mobile-menu" className="md:hidden border-t border-slate-100 bg-white animate-slide-down">
+          <div id="mobile-menu" className="md:hidden border-t border-line bg-surface-card animate-slide-down">
             <div className="px-4 py-3 space-y-1">
               {links.map((link) => (
                 <Link
@@ -132,8 +134,8 @@ export default function Navbar() {
                   onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                     isActive(link.to)
-                      ? 'bg-brand-50 text-brand-800'
-                      : 'text-slate-600 hover:bg-slate-50'
+                      ? 'bg-brand-soft text-brand-ink'
+                      : 'text-ink hover:bg-surface-alt'
                   }`}
                 >
                   <link.icon className="w-5 h-5" />
@@ -143,15 +145,15 @@ export default function Navbar() {
               <Link
                 to="/profile"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all"
+                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-ink hover:bg-surface-alt transition-all"
               >
                 <Cog6ToothIcon className="w-5 h-5" />
                 پروفایل
               </Link>
-              <hr className="my-2 border-slate-100" />
+              <hr className="my-2 border-line" />
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 w-full transition-all"
+                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-danger-soft w-full transition-all"
               >
                 <ArrowRightOnRectangleIcon className="w-5 h-5" />
                 خروج از حساب

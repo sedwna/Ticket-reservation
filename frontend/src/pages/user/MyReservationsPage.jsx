@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { CalendarDaysIcon, ClockIcon, TicketIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import reservationService from '../../services/reservationService';
@@ -20,8 +19,6 @@ export default function MyReservationsPage() {
   const [cancelModal, setCancelModal] = useState(null);
   const [cancelling, setCancelling] = useState(false);
 
-  useEffect(() => { fetchAll(); }, []);
-
   const fetchAll = async () => {
     try {
       setLoading(true);
@@ -38,6 +35,11 @@ export default function MyReservationsPage() {
       setHistory(defaultData.reservations.history);
     } finally { setLoading(false); }
   };
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(fetchAll, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   const handleCancel = async () => {
     if (!cancelModal) return;
@@ -62,21 +64,21 @@ export default function MyReservationsPage() {
     <div className="page-shell">
       <Navbar />
       <main className="page-content animate-fade-in-up max-w-4xl">
-        <h2 className="text-3xl font-extrabold text-slate-900 mb-2">رزروهای من</h2>
-        <p className="text-slate-500 mb-8">مشاهده و مدیریت رزروهای ثبت‌شده</p>
+        <h2 className="text-3xl font-extrabold text-ink-strong mb-2">رزروهای من</h2>
+        <p className="text-ink-muted mb-8">مشاهده و مدیریت رزروهای ثبت‌شده</p>
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-8 w-fit">
+        <div className="flex gap-1 bg-surface-muted rounded-xl p-1 mb-8 w-fit">
           {['active', 'history'].map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                tab === t ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                tab === t ? 'bg-surface-card text-ink-strong shadow-sm' : 'text-ink-muted hover:text-ink'
               }`}
             >
               {t === 'active' ? 'فعال' : 'تاریخچه'}
-              <span className={`mr-1.5 text-xs px-1.5 py-0.5 rounded-full ${tab === t ? 'bg-slate-100 text-slate-600' : 'bg-slate-200 text-slate-500'}`}>
+              <span className={`mr-1.5 text-xs px-1.5 py-0.5 rounded-full ${tab === t ? 'bg-surface-muted text-ink' : 'bg-surface-raised text-ink-muted'}`}>
                 {t === 'active' ? active.length : history.length}
               </span>
             </button>
@@ -101,24 +103,24 @@ export default function MyReservationsPage() {
               <div
                 key={r.id}
                 className={`card p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
-                  r.status === 'CANCELLED' ? 'opacity-60 bg-slate-50' : ''
+                  r.status === 'CANCELLED' ? 'opacity-60 bg-surface-alt' : ''
                 }`}
               >
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                    r.status === 'CANCELLED' ? 'bg-slate-100' : 'bg-brand-50'
+                    r.status === 'CANCELLED' ? 'bg-surface-muted' : 'bg-brand-soft'
                   }`}>
-                    <TicketIcon className={`w-6 h-6 ${r.status === 'CANCELLED' ? 'text-slate-400' : 'text-brand-600'}`} />
+                    <TicketIcon className={`w-6 h-6 ${r.status === 'CANCELLED' ? 'text-ink-faint' : 'text-brand-accent'}`} />
                   </div>
                   <div className="min-w-0">
-                    <h4 className="font-bold text-slate-900">{r.event_title}</h4>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500 mt-1">
+                    <h4 className="font-bold text-ink-strong">{r.event_title}</h4>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-muted mt-1">
                       <span className="flex items-center gap-1"><CalendarDaysIcon className="w-3.5 h-3.5" />{r.event_date}</span>
                       <span className="flex items-center gap-1"><ClockIcon className="w-3.5 h-3.5" />{r.start_time} — {r.end_time}</span>
                     </div>
                     <p className="text-sm mt-1">
-                      <span className="text-brand-700 font-semibold">صندلی {r.seat_label}</span>
-                      <span className="text-slate-400 text-xs mr-2">(ردیف {r.row_number})</span>
+                      <span className="text-brand-ink font-semibold">صندلی {r.seat_label}</span>
+                      <span className="text-ink-faint text-xs mr-2">(ردیف {r.row_number})</span>
                     </p>
                   </div>
                 </div>
@@ -126,7 +128,7 @@ export default function MyReservationsPage() {
                 <div className="flex items-center gap-3 self-end sm:self-center flex-shrink-0">
                   <Badge status={r.status} />
                   {r.status === 'ACTIVE' && (
-                    <Button onClick={() => setCancelModal(r)} variant="ghost" size="sm" className="!text-red-500 hover:!bg-red-50 hover:!text-red-600">
+                    <Button onClick={() => setCancelModal(r)} variant="ghost" size="sm" className="!text-red-500 hover:!bg-danger-soft hover:!text-danger-ink">
                       لغو
                     </Button>
                   )}
@@ -139,14 +141,14 @@ export default function MyReservationsPage() {
 
       <Modal isOpen={!!cancelModal} onClose={() => setCancelModal(null)} title="لغو رزرو" size="sm">
         <div className="text-center">
-          <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+          <div className="w-14 h-14 rounded-full bg-danger-soft flex items-center justify-center mx-auto mb-4">
             <ExclamationTriangleIcon className="w-8 h-8 text-red-400" />
           </div>
-          <p className="text-slate-600 mb-4">آیا از لغو این رزرو اطمینان دارید؟ این عملیات قابل بازگشت نیست.</p>
+          <p className="text-ink mb-4">آیا از لغو این رزرو اطمینان دارید؟ این عملیات قابل بازگشت نیست.</p>
           {cancelModal && (
-            <div className="bg-red-50 rounded-xl p-4 text-sm text-left space-y-1 mb-6">
-              <p className="font-bold text-slate-800">{cancelModal.event_title}</p>
-              <p className="text-slate-500">صندلی: {cancelModal.seat_label}</p>
+            <div className="bg-danger-soft rounded-xl p-4 text-sm text-left space-y-1 mb-6">
+              <p className="font-bold text-ink-strong">{cancelModal.event_title}</p>
+              <p className="text-ink-muted">صندلی: {cancelModal.seat_label}</p>
             </div>
           )}
           <div className="flex gap-3 justify-center">

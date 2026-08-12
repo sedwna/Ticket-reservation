@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useId } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
 const sizes = {
@@ -9,6 +9,8 @@ const sizes = {
 };
 
 export default function Modal({ isOpen, onClose, title, children, size = 'md' }) {
+  const titleId = useId();
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -32,20 +34,26 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Panel */}
       <div
-        className={`relative bg-white rounded-2xl shadow-elevated w-full ${sizes[size]}
+        className={`relative bg-surface-card rounded-2xl shadow-elevated w-full ${sizes[size]}
           max-h-[90vh] overflow-y-auto animate-scale-in`}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
       >
         {title && (
-          <div className="flex items-center justify-between p-5 border-b border-slate-100">
-            <h3 className="text-lg font-bold text-slate-800">{title}</h3>
+          <div className="flex items-center justify-between p-5 border-b border-line">
+            <h3 id={titleId} className="text-lg font-bold text-ink-strong">{title}</h3>
             <button
+              type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-ink-faint hover:text-ink hover:bg-surface-muted transition-all"
+              aria-label="بستن پنجره"
             >
               <XMarkIcon className="w-5 h-5" />
             </button>

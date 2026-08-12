@@ -6,7 +6,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="سامانه رزرو صندلی سالن آمفی‌تئاتر دانشکده مهندسی دانشگاه بوعلی سینا - رزرو آنلاین و آسان صندلی" />
     <meta name="theme-color" content="#1A3C5E" />
+    <meta name="color-scheme" content="light dark" />
     <title>سامانه رزرو صندلی — آمفی‌تئاتر دانشکده مهندسی</title>
+
+    <script>
+      (() => {
+        const storageKey = 'ticket-reservation-theme';
+
+        try {
+          const storedTheme = localStorage.getItem(storageKey);
+          const theme = storedTheme === 'light' || storedTheme === 'dark'
+            ? storedTheme
+            : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          const root = document.documentElement;
+
+          root.classList.toggle('dark', theme === 'dark');
+          root.dataset.theme = theme;
+          root.style.colorScheme = theme;
+          document.querySelector('meta[name="theme-color"]')
+            ?.setAttribute('content', theme === 'dark' ? '#070b14' : '#1A3C5E');
+        } catch {
+          document.documentElement.dataset.theme = 'light';
+        }
+      })();
+    </script>
 
     <!-- Vazirmatn (Persian/Arabic) — bundled locally -->
     <style>

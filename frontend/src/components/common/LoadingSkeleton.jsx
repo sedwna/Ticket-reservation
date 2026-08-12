@@ -1,6 +1,6 @@
 export function CardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-4">
+    <div className="bg-surface-card rounded-2xl border border-line p-6 space-y-4">
       <div className="skeleton h-4 w-24 rounded-md" />
       <div className="skeleton h-6 w-3/4 rounded-md" />
       <div className="skeleton h-4 w-1/2 rounded-md" />
@@ -12,7 +12,7 @@ export function CardSkeleton() {
 
 export function TableSkeleton({ rows = 5, cols = 5 }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-4">
+    <div className="bg-surface-card rounded-2xl border border-line p-6 space-y-4">
       <div className="skeleton h-10 w-full rounded-xl" />
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="flex gap-4">
@@ -27,7 +27,7 @@ export function TableSkeleton({ rows = 5, cols = 5 }) {
 
 export function StatCardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-6 flex items-center gap-4">
+    <div className="bg-surface-card rounded-2xl border border-line p-6 flex items-center gap-4">
       <div className="skeleton w-14 h-14 rounded-xl" />
       <div className="flex-1 space-y-2">
         <div className="skeleton h-4 w-16 rounded-md" />
@@ -62,8 +62,8 @@ export default function LoadingSkeleton({ fullScreen = false, variant = 'card', 
   if (fullScreen) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-surface">
-        <div className="w-12 h-12 rounded-full border-4 border-brand-200 border-t-brand-700 animate-spin" />
-        <p className="text-sm text-slate-400">{message}</p>
+        <div className="w-12 h-12 rounded-full border-4 border-brand-border border-t-brand-700 animate-spin" />
+        <p className="text-sm text-ink-faint">{message}</p>
       </div>
     );
   }
@@ -78,8 +78,8 @@ export default function LoadingSkeleton({ fullScreen = false, variant = 'card', 
 
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-12">
-      <div className="w-10 h-10 rounded-full border-3 border-brand-200 border-t-brand-700 animate-spin" />
-      <p className="text-sm text-slate-400">{message}</p>
+      <div className="w-10 h-10 rounded-full border-3 border-brand-border border-t-brand-700 animate-spin" />
+      <p className="text-sm text-ink-faint">{message}</p>
     </div>
   );
 }

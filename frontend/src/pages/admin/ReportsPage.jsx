@@ -16,6 +16,11 @@ import Footer from '../../components/layout/Footer';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { TableSkeleton } from '../../components/common/LoadingSkeleton';
+import {
+  chartColors,
+  chartTooltipLabelStyle,
+  chartTooltipStyle,
+} from '../../utils/chartTheme';
 
 const PIE_COLORS = ['#10b981', '#ef4444', '#f59e0b', '#3b82f6', '#1A3C5E', '#8b5cf6', '#ec4899'];
 
@@ -99,7 +104,10 @@ export default function ReportsPage() {
 
   // Auto-refetch when event filter changes
   useEffect(() => {
-    if (!loading) applyFilters();
+    if (loading) return undefined;
+
+    const timeoutId = window.setTimeout(applyFilters, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [eventFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleApplyClick = () => applyFilters();
@@ -158,8 +166,8 @@ export default function ReportsPage() {
       <main className="page-content animate-fade-in-up">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h2 className="text-3xl font-extrabold text-slate-900">گزارش‌ها</h2>
-            <p className="text-slate-500 mt-1">آمار و تحلیل رزروهای سامانه</p>
+            <h2 className="text-3xl font-extrabold text-ink-strong">گزارش‌ها</h2>
+            <p className="text-ink-muted mt-1">آمار و تحلیل رزروهای سامانه</p>
           </div>
           <Button onClick={handleExport} variant="primary" size="md">
             <ArrowDownTrayIcon className="w-5 h-5" /> دانلود CSV
@@ -167,10 +175,10 @@ export default function ReportsPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl border border-slate-100 p-4 sm:p-5 mb-8">
+        <div className="bg-surface-card rounded-2xl border border-line p-4 sm:p-5 mb-8">
           <div className="grid sm:grid-cols-4 gap-4 items-end">
             <div>
-              <label className="block text-xs text-slate-500 mb-1.5">رویداد</label>
+              <label className="block text-xs text-ink-muted mb-1.5">رویداد</label>
               <select
                 value={eventFilter}
                 onChange={e => setEventFilter(e.target.value)}
@@ -183,12 +191,12 @@ export default function ReportsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-slate-500 mb-1.5">از تاریخ</label>
+              <label className="block text-xs text-ink-muted mb-1.5">از تاریخ</label>
               <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
                 className="input-field ltr text-left" dir="ltr" />
             </div>
             <div>
-              <label className="block text-xs text-slate-500 mb-1.5">تا تاریخ</label>
+              <label className="block text-xs text-ink-muted mb-1.5">تا تاریخ</label>
               <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
                 className="input-field ltr text-left" dir="ltr" />
             </div>
@@ -207,24 +215,24 @@ export default function ReportsPage() {
 
           {/* Active filter indicator */}
           {hasActiveFilters && (
-            <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-slate-100">
-              <span className="text-xs text-slate-400">فیلترهای فعال:</span>
+            <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-line">
+              <span className="text-xs text-ink-faint">فیلترهای فعال:</span>
               {eventFilter && (
-                <span className="inline-flex items-center gap-1 text-xs bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full">
+                <span className="inline-flex items-center gap-1 text-xs bg-brand-soft text-brand-ink px-2.5 py-1 rounded-full">
                   رویداد: {events.find(e => e.id === eventFilter)?.title || '...'}
                 </span>
               )}
               {dateFrom && (
-                <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full">
+                <span className="inline-flex items-center gap-1 text-xs bg-warning-soft text-warning-ink px-2.5 py-1 rounded-full">
                   از: {dateFrom}
                 </span>
               )}
               {dateTo && (
-                <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full">
+                <span className="inline-flex items-center gap-1 text-xs bg-warning-soft text-warning-ink px-2.5 py-1 rounded-full">
                   تا: {dateTo}
                 </span>
               )}
-              <span className="text-xs text-slate-400 mr-auto">
+              <span className="text-xs text-ink-faint mr-auto">
                 {filteredReservations.length} نتیجه
               </span>
             </div>
@@ -237,7 +245,7 @@ export default function ReportsPage() {
             <div className="grid lg:grid-cols-2 gap-6 mb-8">
               {/* Bar Chart */}
               <div className="card p-6">
-                <h3 className="text-lg font-bold text-slate-900 mb-6">
+                <h3 className="text-lg font-bold text-ink-strong mb-6">
                   {eventReport
                     ? `رزروهای: ${eventReport.event_title}`
                     : 'مقایسه رزروها به تفکیک رویداد'}
@@ -245,21 +253,21 @@ export default function ReportsPage() {
                 {barData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={barData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} />
-                      <YAxis stroke="#94a3b8" fontSize={11} allowDecimals={false} />
-                      <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0' }} />
-                      <Bar dataKey="value" fill="#1A3C5E" radius={[6, 6, 0, 0]} />
+                      <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} vertical={false} />
+                      <XAxis dataKey="name" stroke={chartColors.axis} fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis stroke={chartColors.axis} fontSize={11} allowDecimals={false} tickLine={false} axisLine={false} />
+                      <Tooltip contentStyle={chartTooltipStyle} labelStyle={chartTooltipLabelStyle} />
+                      <Bar dataKey="value" fill={chartColors.primary} radius={[6, 6, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <p className="text-slate-400 text-center py-24">داده‌ای برای نمایش وجود ندارد</p>
+                  <p className="text-ink-faint text-center py-24">داده‌ای برای نمایش وجود ندارد</p>
                 )}
               </div>
 
               {/* Donut Chart + Legend */}
               <div className="card p-6">
-                <h3 className="text-lg font-bold text-slate-900 mb-4">
+                <h3 className="text-lg font-bold text-ink-strong mb-4">
                   {eventReport
                     ? `وضعیت ظرفیت: ${eventReport.event_title}`
                     : 'توزیع رزروها'}
@@ -284,7 +292,8 @@ export default function ReportsPage() {
                           </Pie>
                           <Tooltip
                             formatter={(value, name) => [value, name]}
-                            contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontFamily: 'Vazirmatn, Tahoma, sans-serif' }}
+                            contentStyle={chartTooltipStyle}
+                            labelStyle={chartTooltipLabelStyle}
                           />
                         </PieChart>
                     </div>
@@ -296,22 +305,22 @@ export default function ReportsPage() {
                         const pct = total > 0 ? ((entry.value / total) * 100).toFixed(1) : '0';
                         const color = PIE_COLORS[i % PIE_COLORS.length];
                         return (
-                          <div key={i} className="flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-slate-50 transition-colors">
+                          <div key={i} className="flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-surface-alt transition-colors">
                             {/* Color swatch */}
                             <div
                               className="w-3.5 h-3.5 rounded-md flex-shrink-0"
                               style={{ backgroundColor: color }}
                             />
                             {/* Label — allow full text wrapping */}
-                            <span className="flex-1 text-sm font-medium text-slate-700 leading-relaxed min-w-0">
+                            <span className="flex-1 text-sm font-medium text-ink leading-relaxed min-w-0">
                               {entry.name}
                             </span>
                             {/* Count + percentage */}
                             <div className="flex items-center gap-2 flex-shrink-0 text-sm ml-auto">
-                              <span className="font-bold text-slate-800 stat-counter tabular-nums">
+                              <span className="font-bold text-ink-strong stat-counter tabular-nums">
                                 {entry.value}
                               </span>
-                              <span className="text-xs text-slate-400 font-medium tabular-nums w-12 text-left ltr" dir="ltr">
+                              <span className="text-xs text-ink-faint font-medium tabular-nums w-12 text-left ltr" dir="ltr">
                                 {pct}%
                               </span>
                             </div>
@@ -321,7 +330,7 @@ export default function ReportsPage() {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-slate-400 text-center py-24">داده‌ای برای نمایش وجود ندارد</p>
+                  <p className="text-ink-faint text-center py-24">داده‌ای برای نمایش وجود ندارد</p>
                 )}
               </div>
             </div>
@@ -330,30 +339,30 @@ export default function ReportsPage() {
             {eventReport && (
               <div className="grid sm:grid-cols-3 gap-4 mb-8">
                 <div className="card p-5 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center">
-                    <CalendarDaysIcon className="w-6 h-6 text-brand-600" />
+                  <div className="w-12 h-12 rounded-xl bg-brand-soft flex items-center justify-center">
+                    <CalendarDaysIcon className="w-6 h-6 text-brand-accent" />
                   </div>
                   <div>
-                    <p className="text-2xl font-extrabold text-slate-900">{eventReport.total_capacity}</p>
-                    <p className="text-xs text-slate-500">ظرفیت کل</p>
+                    <p className="text-2xl font-extrabold text-ink-strong">{eventReport.total_capacity}</p>
+                    <p className="text-xs text-ink-muted">ظرفیت کل</p>
                   </div>
                 </div>
                 <div className="card p-5 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
-                    <CheckCircleIcon className="w-6 h-6 text-emerald-600" />
+                  <div className="w-12 h-12 rounded-xl bg-success-soft flex items-center justify-center">
+                    <CheckCircleIcon className="w-6 h-6 text-success-ink" />
                   </div>
                   <div>
-                    <p className="text-2xl font-extrabold text-slate-900">{eventReport.reserved_count}</p>
-                    <p className="text-xs text-slate-500">رزرو شده</p>
+                    <p className="text-2xl font-extrabold text-ink-strong">{eventReport.reserved_count}</p>
+                    <p className="text-xs text-ink-muted">رزرو شده</p>
                   </div>
                 </div>
                 <div className="card p-5 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
-                    <TicketIcon className="w-6 h-6 text-amber-600" />
+                  <div className="w-12 h-12 rounded-xl bg-warning-soft flex items-center justify-center">
+                    <TicketIcon className="w-6 h-6 text-warning-ink" />
                   </div>
                   <div>
-                    <p className="text-2xl font-extrabold text-slate-900">{eventReport.available_count}</p>
-                    <p className="text-xs text-slate-500">صندلی آزاد</p>
+                    <p className="text-2xl font-extrabold text-ink-strong">{eventReport.available_count}</p>
+                    <p className="text-xs text-ink-muted">صندلی آزاد</p>
                   </div>
                 </div>
               </div>
@@ -362,15 +371,15 @@ export default function ReportsPage() {
             {/* Trend */}
             {!eventReport && trend.length > 0 && (
               <div className="card p-6 mb-8">
-                <h3 className="text-lg font-bold text-slate-900 mb-6">روند رزروها (۷ روز)</h3>
+                <h3 className="text-lg font-bold text-ink-strong mb-6">روند رزروها (۷ روز)</h3>
                 <ResponsiveContainer width="100%" height={240}>
                   <LineChart data={trend}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="date" stroke="#94a3b8" fontSize={11} />
-                    <YAxis stroke="#94a3b8" fontSize={11} allowDecimals={false} />
-                    <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0' }} />
-                    <Line type="monotone" dataKey="count" stroke="#10b981" strokeWidth={2.5}
-                      dot={{ fill: '#10b981', r: 4, strokeWidth: 2, stroke: '#fff' }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} vertical={false} />
+                    <XAxis dataKey="date" stroke={chartColors.axis} fontSize={11} tickLine={false} axisLine={false} />
+                    <YAxis stroke={chartColors.axis} fontSize={11} allowDecimals={false} tickLine={false} axisLine={false} />
+                    <Tooltip contentStyle={chartTooltipStyle} labelStyle={chartTooltipLabelStyle} />
+                    <Line type="monotone" dataKey="count" stroke={chartColors.success} strokeWidth={2.5}
+                      dot={{ fill: chartColors.success, r: 4, strokeWidth: 2, stroke: chartColors.dotStroke }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -378,34 +387,34 @@ export default function ReportsPage() {
 
             {/* Table */}
             <div className="card overflow-x-auto">
-              <h3 className="text-lg font-bold text-slate-900 p-6 pb-4">
+              <h3 className="text-lg font-bold text-ink-strong p-6 pb-4">
                 جزئیات رزروها
-                {eventReport && <span className="text-sm font-normal text-slate-400 mr-2">— {eventReport.event_title}</span>}
+                {eventReport && <span className="text-sm font-normal text-ink-faint mr-2">— {eventReport.event_title}</span>}
               </h3>
               {filteredReservations.length === 0 ? (
-                <p className="text-slate-400 text-center py-16">
+                <p className="text-ink-faint text-center py-16">
                   {hasActiveFilters ? 'رزروی با فیلترهای انتخاب شده یافت نشد' : 'رزروی برای نمایش وجود ندارد'}
                 </p>
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-slate-100">
-                      <th className="text-right py-3 px-4 font-semibold text-slate-500 text-xs">کاربر</th>
-                      <th className="text-right py-3 px-4 font-semibold text-slate-500 text-xs">ش. دانشجویی</th>
-                      <th className="text-right py-3 px-4 font-semibold text-slate-500 text-xs">رویداد</th>
-                      <th className="text-right py-3 px-4 font-semibold text-slate-500 text-xs">صندلی</th>
-                      <th className="text-right py-3 px-4 font-semibold text-slate-500 text-xs">تاریخ</th>
-                      <th className="text-right py-3 px-4 font-semibold text-slate-500 text-xs">وضعیت</th>
+                    <tr className="border-b border-line">
+                      <th className="text-right py-3 px-4 font-semibold text-ink-muted text-xs">کاربر</th>
+                      <th className="text-right py-3 px-4 font-semibold text-ink-muted text-xs">ش. دانشجویی</th>
+                      <th className="text-right py-3 px-4 font-semibold text-ink-muted text-xs">رویداد</th>
+                      <th className="text-right py-3 px-4 font-semibold text-ink-muted text-xs">صندلی</th>
+                      <th className="text-right py-3 px-4 font-semibold text-ink-muted text-xs">تاریخ</th>
+                      <th className="text-right py-3 px-4 font-semibold text-ink-muted text-xs">وضعیت</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredReservations.map((r, i) => (
-                      <tr key={r.id || i} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                        <td className="py-3 px-4 text-slate-800">{r.user_full_name || '—'}</td>
-                        <td className="py-3 px-4 text-slate-500 ltr text-left" dir="ltr">{r.user_student_id || '—'}</td>
-                        <td className="py-3 px-4 text-slate-600">{r.event_title || '—'}</td>
-                        <td className="py-3 px-4 font-medium text-slate-700">{r.seat_label || '—'}</td>
-                        <td className="py-3 px-4 text-slate-400 text-xs">{new Date(r.reserved_at).toLocaleDateString('fa-IR')}</td>
+                      <tr key={r.id || i} className="border-b border-line/60 hover:bg-surface-alt/70 transition-colors">
+                        <td className="py-3 px-4 text-ink-strong">{r.user_full_name || '—'}</td>
+                        <td className="py-3 px-4 text-ink-muted ltr text-left" dir="ltr">{r.user_student_id || '—'}</td>
+                        <td className="py-3 px-4 text-ink">{r.event_title || '—'}</td>
+                        <td className="py-3 px-4 font-medium text-ink">{r.seat_label || '—'}</td>
+                        <td className="py-3 px-4 text-ink-faint text-xs">{new Date(r.reserved_at).toLocaleDateString('fa-IR')}</td>
                         <td className="py-3 px-4"><Badge status={r.status} size="xs" /></td>
                       </tr>
                     ))}

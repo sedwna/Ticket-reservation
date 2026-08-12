@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/authContext';
 import authService from '../../services/authService';
 import toast from 'react-hot-toast';
 import Button from '../../components/common/Button';
+import ThemeToggle from '../../components/common/ThemeToggle';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 const strengthLabels = ['', 'ضعیف', 'متوسط', 'خوب', 'عالی'];
-const strengthColors = ['bg-slate-200', 'bg-red-400', 'bg-amber-400', 'bg-emerald-400', 'bg-emerald-500'];
+const strengthColors = ['bg-surface-raised', 'bg-red-400', 'bg-amber-400', 'bg-emerald-400', 'bg-emerald-500'];
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -68,31 +69,34 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface p-4 py-8">
       <div className="w-full max-w-lg animate-fade-in-up">
-        <Button
-          to="/"
-          variant="ghost"
-          size="sm"
-          className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/90 text-slate-600 shadow-sm transition hover:bg-slate-100 mb-6"
-        >
-          <ArrowLeftIcon className="w-4 h-4" /> بازگشت
-        </Button>
+        <div className="mb-6 flex items-center justify-between">
+          <Button
+            to="/"
+            variant="ghost"
+            size="sm"
+            className="inline-flex items-center gap-2 rounded-2xl border border-line-strong bg-surface-card/90 text-ink shadow-sm transition hover:bg-surface-muted"
+          >
+            <ArrowLeftIcon className="w-4 h-4" /> بازگشت
+          </Button>
+          <ThemeToggle />
+        </div>
 
-        <div className="bg-white rounded-2xl shadow-card border border-slate-100 p-8">
+        <div className="bg-surface-card rounded-2xl shadow-card border border-line p-8">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-extrabold text-slate-900 mb-2">ایجاد حساب کاربری</h2>
-            <p className="text-slate-500 text-sm">برای رزرو صندلی در سامانه ثبت‌نام کنید</p>
+            <h2 className="text-2xl font-extrabold text-ink-strong mb-2">ایجاد حساب کاربری</h2>
+            <p className="text-ink-muted text-sm">برای رزرو صندلی در سامانه ثبت‌نام کنید</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">نام *</label>
+                <label className="block text-sm font-medium text-ink mb-1">نام *</label>
                 <input type="text" value={form.first_name}
                   onChange={(e) => setForm({...form, first_name: e.target.value})}
                   className="input-field" placeholder="نام" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">نام خانوادگی *</label>
+                <label className="block text-sm font-medium text-ink mb-1">نام خانوادگی *</label>
                 <input type="text" value={form.last_name}
                   onChange={(e) => setForm({...form, last_name: e.target.value})}
                   className="input-field" placeholder="نام خانوادگی" />
@@ -100,21 +104,21 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">شماره دانشجویی *</label>
+              <label className="block text-sm font-medium text-ink mb-1">شماره دانشجویی *</label>
               <input type="text" value={form.student_id}
                 onChange={(e) => setForm({...form, student_id: e.target.value})}
                 className="input-field ltr text-left" dir="ltr" placeholder="4012345" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">ایمیل *</label>
+              <label className="block text-sm font-medium text-ink mb-1">ایمیل *</label>
               <input type="email" value={form.email}
                 onChange={(e) => setForm({...form, email: e.target.value})}
                 className="input-field ltr text-left" dir="ltr" placeholder="example@basu.ac.ir" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">رمز عبور *</label>
+              <label className="block text-sm font-medium text-ink mb-1">رمز عبور *</label>
               <input type="password" value={form.password}
                 onChange={(e) => setForm({...form, password: e.target.value})}
                 className="input-field ltr text-left" dir="ltr" placeholder="حداقل ۸ کاراکتر" />
@@ -122,10 +126,10 @@ export default function RegisterPage() {
                 <div className="mt-2 space-y-1">
                   <div className="flex gap-1">
                     {[1, 2, 3, 4].map(i => (
-                      <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i <= strength ? strengthColors[strength] : 'bg-slate-100'}`} />
+                      <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i <= strength ? strengthColors[strength] : 'bg-surface-muted'}`} />
                     ))}
                   </div>
-                  <p className={`text-xs font-medium ${strength > 2 ? 'text-emerald-600' : strength > 1 ? 'text-amber-600' : 'text-red-500'}`}>
+                  <p className={`text-xs font-medium ${strength > 2 ? 'text-success-ink' : strength > 1 ? 'text-warning-ink' : 'text-red-500'}`}>
                     {strengthLabels[strength]}
                   </p>
                 </div>
@@ -133,7 +137,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">تکرار رمز عبور *</label>
+              <label className="block text-sm font-medium text-ink mb-1">تکرار رمز عبور *</label>
               <input type="password" value={form.password_confirm}
                 onChange={(e) => setForm({...form, password_confirm: e.target.value})}
                 className={`input-field ltr text-left ${form.password_confirm && form.password !== form.password_confirm ? 'border-red-300 focus:ring-red-500/30' : ''}`}
@@ -153,9 +157,9 @@ export default function RegisterPage() {
             </Button>
           </form>
 
-          <p className="text-center mt-6 text-sm text-slate-500">
+          <p className="text-center mt-6 text-sm text-ink-muted">
             قبلاً ثبت‌نام کرده‌اید؟{' '}
-            <Link to="/login" className="text-brand-700 hover:text-brand-900 font-semibold transition-colors">وارد شوید</Link>
+            <Link to="/login" className="text-brand-ink hover:text-brand-ink font-semibold transition-colors">وارد شوید</Link>
           </p>
         </div>
       </div>

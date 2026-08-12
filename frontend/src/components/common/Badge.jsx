@@ -1,9 +1,9 @@
 const variants = {
-  success: 'bg-success-50 text-success-600 border-success-500/20',
-  danger: 'bg-red-50 text-red-600 border-red-500/20',
-  warning: 'bg-amber-50 text-amber-600 border-amber-500/20',
-  info: 'bg-brand-50 text-brand-700 border-brand-500/20',
-  neutral: 'bg-slate-50 text-slate-500 border-slate-500/20',
+  success: 'bg-success-soft text-success-ink border-success-border',
+  danger: 'bg-danger-soft text-danger-ink border-danger-border',
+  warning: 'bg-warning-soft text-warning-ink border-warning-border',
+  info: 'bg-brand-soft text-brand-ink border-brand-border',
+  neutral: 'bg-surface-alt text-ink-muted border-line-strong',
 };
 
 const labels = {

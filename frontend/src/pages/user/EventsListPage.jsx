@@ -17,8 +17,6 @@ export default function EventsListPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => { fetchEvents(); }, []);
-
   const fetchEvents = async () => {
     try {
       setLoading(true);
@@ -32,6 +30,11 @@ export default function EventsListPage() {
       setEvents(defaultData.events);
     } finally { setLoading(false); }
   };
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(fetchEvents, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   const filtered = events.filter(e => {
     if (search && !e.title.includes(search)) return false;
@@ -49,15 +52,15 @@ export default function EventsListPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h2 className="text-3xl font-extrabold text-slate-900">رویدادهای فعال</h2>
-            <p className="text-slate-500 mt-1">رویدادهای در حال برگزاری را مشاهده و صندلی رزرو کنید</p>
+            <h2 className="text-3xl font-extrabold text-ink-strong">رویدادهای فعال</h2>
+            <p className="text-ink-muted mt-1">رویدادهای در حال برگزاری را مشاهده و صندلی رزرو کنید</p>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl border border-slate-100 p-4 mb-8 flex flex-col sm:flex-row gap-3">
+        <div className="bg-surface-card rounded-2xl border border-line p-4 mb-8 flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <MagnifyingGlassIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <MagnifyingGlassIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-faint" />
             <input
               type="text" value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="جستجو بر اساس عنوان..."
@@ -96,13 +99,13 @@ export default function EventsListPage() {
               <div key={event.id} className="card-interactive group p-0 overflow-hidden">
                 {/* Poster */}
                 {event.poster_url ? (
-                  <div className="relative h-36 bg-slate-100 overflow-hidden">
+                  <div className="relative h-36 bg-surface-muted overflow-hidden">
                     <img src={event.poster_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                     <div className="absolute top-3 right-3"><Badge status={event.status} /></div>
                   </div>
                 ) : (
-                  <div className="h-24 bg-gradient-to-br from-brand-100 to-brand-50 flex items-center justify-center">
+                  <div className="h-24 bg-gradient-to-br from-brand-muted to-brand-soft flex items-center justify-center">
                     <CalendarDaysIcon className="w-8 h-8 text-brand-300" />
                   </div>
                 )}
@@ -110,45 +113,45 @@ export default function EventsListPage() {
                 {/* Header */}
                 <div className="flex justify-between items-start mb-3">
                   {!event.poster_url && <Badge status={event.status} />}
-                  <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                  <div className="flex items-center gap-1.5 text-xs text-ink-faint">
                     <CalendarDaysIcon className="w-3.5 h-3.5" />
                     {event.event_date}
                   </div>
                 </div>
 
                 {/* Title */}
-                <h3 className="text-lg font-bold text-slate-900 mb-3 line-clamp-2 group-hover:text-brand-700 transition-colors">
+                <h3 className="text-lg font-bold text-ink-strong mb-3 line-clamp-2 group-hover:text-brand-ink transition-colors">
                   {event.title}
                 </h3>
 
                 {/* Organizer */}
                 {event.organizer && (
-                  <div className="flex items-center gap-2 text-sm text-slate-500 mb-3">
-                    <span className="font-medium text-slate-700"> برگزارکننده: </span>
+                  <div className="flex items-center gap-2 text-sm text-ink-muted mb-3">
+                    <span className="font-medium text-ink"> برگزارکننده: </span>
                     <span>{event.organizer.name}</span>
-                    {event.organizer.email && <span className="text-xs text-slate-400">· {event.organizer.email}</span>}
+                    {event.organizer.email && <span className="text-xs text-ink-faint">· {event.organizer.email}</span>}
                   </div>
                 )}
 
                 {/* Time */}
-                <div className="flex items-center gap-1.5 text-sm text-slate-500 mb-4">
+                <div className="flex items-center gap-1.5 text-sm text-ink-muted mb-4">
                   <ClockIcon className="w-4 h-4" />
                   {event.start_time} — {event.end_time}
                 </div>
 
                 {/* Progress */}
                 <div className="mb-4">
-                  <div className="flex justify-between text-xs text-slate-500 mb-1.5">
+                  <div className="flex justify-between text-xs text-ink-muted mb-1.5">
                     <span>ظرفیت: {event.total_capacity} نفر</span>
                     <span className="font-medium">{event.available_count} صندلی باقی‌مانده</span>
                   </div>
-                  <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="w-full h-2 bg-surface-muted rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${occupancyColor(event.occupancy_rate)}`}
                       style={{ width: `${Math.min(100, event.occupancy_rate)}%` }}
                     />
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1">
+                  <p className="text-[10px] text-ink-faint mt-1">
                     {Math.round(event.occupancy_rate || 0)}% پر شده
                   </p>
                 </div>

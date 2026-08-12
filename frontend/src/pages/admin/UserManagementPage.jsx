@@ -5,7 +5,7 @@ import {
   MagnifyingGlassIcon,
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
-import { CheckIcon } from '@heroicons/react/20/solid';
+import { CheckIcon, XMarkIcon } from '@heroicons/react/20/solid';
 import adminService from '../../services/adminService';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
@@ -94,7 +94,11 @@ export default function UserManagementPage() {
               aria-hidden="true"
               className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${nextIsActive ? 'bg-emerald-500' : 'bg-red-500'}`}
             >
-              <CheckIcon className="h-3.5 w-3.5 text-white" />
+              {nextIsActive ? (
+                <CheckIcon className="h-3.5 w-3.5 text-white" />
+              ) : (
+                <XMarkIcon className="h-3.5 w-3.5 text-white" />
+              )}
             </span>
           ),
         },
@@ -170,15 +174,15 @@ export default function UserManagementPage() {
     <div className="page-shell">
       <Navbar />
       <main className="page-content animate-fade-in-up">
-        <h2 className="mb-8 text-3xl font-extrabold text-slate-900">
+        <h2 className="mb-8 text-3xl font-extrabold text-ink-strong">
           مدیریت کاربران
         </h2>
 
-        <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-4 sm:flex-row">
+        <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-line bg-surface-card p-4 sm:flex-row">
           <div className="relative flex-1">
             <MagnifyingGlassIcon
               aria-hidden="true"
-              className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
+              className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-faint"
             />
             <input
               type="search"
@@ -208,13 +212,13 @@ export default function UserManagementPage() {
           <div className="card overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-100">
-                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-slate-500">کاربر</th>
-                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-slate-500">ش. دانشجویی</th>
-                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-slate-500">ایمیل</th>
-                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-slate-500">نقش</th>
-                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-slate-500">رزروها</th>
-                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-slate-500">وضعیت</th>
+                <tr className="border-b border-line">
+                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-ink-muted">کاربر</th>
+                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-ink-muted">ش. دانشجویی</th>
+                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-ink-muted">ایمیل</th>
+                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-ink-muted">نقش</th>
+                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-ink-muted">رزروها</th>
+                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-ink-muted">وضعیت</th>
                   <th scope="col" className="px-4 py-3">
                     <span className="sr-only">عملیات</span>
                   </th>
@@ -230,27 +234,27 @@ export default function UserManagementPage() {
                   return (
                     <tr
                       key={user.id}
-                      className="border-b border-slate-50 transition-colors hover:bg-slate-50/50"
+                      className="border-b border-line/60 transition-colors hover:bg-surface-alt/70"
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100">
-                            <UserCircleIcon aria-hidden="true" className="h-5 w-5 text-slate-400" />
+                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface-muted">
+                            <UserCircleIcon aria-hidden="true" className="h-5 w-5 text-ink-faint" />
                           </div>
-                          <span className="font-medium text-slate-800">{fullName}</span>
+                          <span className="font-medium text-ink-strong">{fullName}</span>
                         </div>
                       </td>
 
-                      <td className="px-4 py-3 text-left text-slate-500" dir="ltr">
+                      <td className="px-4 py-3 text-left text-ink-muted" dir="ltr">
                         {user.student_id}
                       </td>
-                      <td className="px-4 py-3 text-left text-xs text-slate-500" dir="ltr">
+                      <td className="px-4 py-3 text-left text-xs text-ink-muted" dir="ltr">
                         {user.email}
                       </td>
                       <td className="px-4 py-3">
                         <Badge status={user.role} size="xs" />
                       </td>
-                      <td className="px-4 py-3 text-slate-600">
+                      <td className="px-4 py-3 text-ink">
                         {user.reservation_count ?? 0}
                       </td>
                       <td className="px-4 py-3">
@@ -263,11 +267,11 @@ export default function UserManagementPage() {
                           title={user.is_active ? 'غیرفعال کردن حساب' : 'فعال کردن حساب'}
                           disabled={anyStatusIsLoading}
                           onClick={() => toggleStatus(user)}
-                          className={`relative inline-flex h-6 w-10 shrink-0 overflow-hidden rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60 ${user.is_active ? 'bg-emerald-500' : 'bg-red-500'} ${statusIsLoading ? 'animate-pulse' : ''}`}
+                          className={`relative inline-flex h-6 w-10 shrink-0 overflow-hidden rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-wait disabled:opacity-60 ${user.is_active ? 'bg-emerald-500' : 'bg-red-500'} ${statusIsLoading ? 'animate-pulse' : ''}`}
                         >
                           <span
                             aria-hidden="true"
-                            className={`pointer-events-none absolute right-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${user.is_active ? 'translate-x-0' : '-translate-x-4'}`}
+                            className={`pointer-events-none absolute right-1 top-1 h-4 w-4 rounded-full bg-surface-card shadow-sm transition-transform duration-200 ${user.is_active ? 'translate-x-0' : '-translate-x-4'}`}
                           />
                         </button>
                       </td>
@@ -291,7 +295,7 @@ export default function UserManagementPage() {
 
                 {filteredUsers.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
+                    <td colSpan={7} className="px-4 py-12 text-center text-ink-muted">
                       کاربری مطابق جستجو یا فیلتر انتخاب‌شده پیدا نشد.
                     </td>
                   </tr>
@@ -310,14 +314,14 @@ export default function UserManagementPage() {
       >
         {roleModal && (
           <div className="text-center">
-            <p className="mb-4 text-slate-600">تغییر نقش کاربر:</p>
-            <div className="mb-6 space-y-2 rounded-xl bg-slate-50 p-4">
+            <p className="mb-4 text-ink">تغییر نقش کاربر:</p>
+            <div className="mb-6 space-y-2 rounded-xl bg-surface-alt p-4">
               <p className="font-bold">{getFullName(roleModal)}</p>
               <div className="flex items-center justify-center gap-3 text-sm">
-                <span className="text-slate-400">فعلی:</span>
+                <span className="text-ink-faint">فعلی:</span>
                 <Badge status={roleModal.role} />
-                <span aria-hidden="true" className="text-slate-300">←</span>
-                <span className="text-slate-400">جدید:</span>
+                <span aria-hidden="true" className="text-ink-subtle">←</span>
+                <span className="text-ink-faint">جدید:</span>
                 <Badge status={roleModal.role === 'ADMIN' ? 'USER' : 'ADMIN'} />
               </div>
             </div>

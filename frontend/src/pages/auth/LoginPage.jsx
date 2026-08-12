@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/authContext';
 import authService from '../../services/authService';
 import toast from 'react-hot-toast';
 import Button from '../../components/common/Button';
+import ThemeToggle from '../../components/common/ThemeToggle';
 import { EyeIcon, EyeSlashIcon, AcademicCapIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import defaultData from '../../data/defaultData';
 
@@ -108,29 +109,32 @@ export default function LoginPage() {
               to="/"
               variant="ghost"
               size="sm"
-              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/90 text-slate-600 shadow-sm transition hover:bg-slate-100"
+              className="inline-flex items-center gap-2 rounded-2xl border border-line-strong bg-surface-card/90 text-ink shadow-sm transition hover:bg-surface-muted"
             >
               <ArrowLeftIcon className="w-4 h-4" />
               بازگشت
             </Button>
-            <span className="text-sm text-slate-500">ورود امن به سامانه</span>
+            <div className="flex items-center gap-3">
+              <span className="hidden text-sm text-ink-muted sm:inline">ورود امن به سامانه</span>
+              <ThemeToggle />
+            </div>
           </div>
 
-          <div className="card p-8 sm:p-10 bg-white">
+          <div className="card p-8 sm:p-10 bg-surface-card">
             <div className="mb-6">
-              <h2 className="text-3xl font-extrabold text-slate-900 mb-2">ورود به سامانه</h2>
-              <p className="text-slate-500">برای دسترسی به رزروها و مدیریت رویدادها وارد شوید.</p>
+              <h2 className="text-3xl font-extrabold text-ink-strong mb-2">ورود به سامانه</h2>
+              <p className="text-ink-muted">برای دسترسی به رزروها و مدیریت رویدادها وارد شوید.</p>
             </div>
 
             {formError ? (
-              <div role="alert" aria-live="assertive" className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div role="alert" aria-live="assertive" className="mb-5 rounded-2xl border border-danger-border bg-danger-soft px-4 py-3 text-sm text-danger-ink">
                 {formError}
               </div>
             ) : null}
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-ink mb-2">
                   ایمیل
                 </label>
                 <input
@@ -151,7 +155,7 @@ export default function LoginPage() {
                   aria-describedby={errors.email ? 'email-error' : undefined}
                 />
                 {errors.email && (
-                  <p id="email-error" className="mt-2 text-sm text-red-600">
+                  <p id="email-error" className="mt-2 text-sm text-danger-ink">
                     {errors.email}
                   </p>
                 )}
@@ -159,10 +163,10 @@ export default function LoginPage() {
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+                  <label htmlFor="password" className="block text-sm font-medium text-ink">
                     رمز عبور
                   </label>
-                  <span className="text-xs text-slate-400">حداقل ۸ کاراکتر</span>
+                  <span className="text-xs text-ink-faint">حداقل ۸ کاراکتر</span>
                 </div>
                 <div className="relative">
                   <input
@@ -184,14 +188,14 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-ink-faint transition hover:bg-surface-muted hover:text-ink"
                     aria-label={showPassword ? 'پنهان کردن رمز عبور' : 'نمایش رمز عبور'}
                   >
                     {showPassword ? <EyeSlashIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
                   </button>
                 </div>
                 {errors.password && (
-                  <p id="password-error" className="mt-2 text-sm text-red-600">
+                  <p id="password-error" className="mt-2 text-sm text-danger-ink">
                     {errors.password}
                   </p>
                 )}
@@ -215,26 +219,26 @@ export default function LoginPage() {
                 )}
               </Button>
 
-              <div className="flex flex-col items-center gap-3 pt-4 text-sm text-slate-500">
+              <div className="flex flex-col items-center gap-3 pt-4 text-sm text-ink-muted">
                 <p>اگر هنوز حساب کاربری ندارید،</p>
-                <Link to="/register" className="font-semibold text-brand-700 hover:text-brand-900 transition-colors">
+                <Link to="/register" className="font-semibold text-brand-ink hover:text-brand-ink transition-colors">
                   ثبت‌نام در سامانه
                 </Link>
               </div>
             </form>
           </div>
 
-          <div className="mt-6 rounded-3xl border border-slate-200 bg-surface-alt p-4 text-sm text-slate-600 shadow-sm">
-            <p className="font-semibold text-slate-800 mb-3">اطلاعات تست</p>
+          <div className="mt-6 rounded-3xl border border-line-strong bg-surface-alt p-4 text-sm text-ink shadow-sm">
+            <p className="font-semibold text-ink-strong mb-3">اطلاعات تست</p>
             <div className="grid gap-3">
-              <div className="rounded-2xl border border-slate-200 bg-white p-3">
-                <p className="font-medium text-slate-800">حساب مدیر</p>
-                <p className="ltr text-left text-slate-500 mt-1" dir="ltr">{defaultData.credentials.admin.email} / {defaultData.credentials.admin.password}</p>
+              <div className="rounded-2xl border border-line-strong bg-surface-card p-3">
+                <p className="font-medium text-ink-strong">حساب مدیر</p>
+                <p className="ltr text-left text-ink-muted mt-1" dir="ltr">{defaultData.credentials.admin.email} / {defaultData.credentials.admin.password}</p>
               </div>
               {defaultData.credentials.users.map((u, idx) => (
-                <div key={u.email} className="rounded-2xl border border-slate-200 bg-white p-3">
-                  <p className="font-medium text-slate-800">حساب کاربر {idx + 1}</p>
-                  <p className="ltr text-left text-slate-500 mt-1" dir="ltr">{u.email} / {u.password}</p>
+                <div key={u.email} className="rounded-2xl border border-line-strong bg-surface-card p-3">
+                  <p className="font-medium text-ink-strong">حساب کاربر {idx + 1}</p>
+                  <p className="ltr text-left text-ink-muted mt-1" dir="ltr">{u.email} / {u.password}</p>
                 </div>
               ))}
             </div>

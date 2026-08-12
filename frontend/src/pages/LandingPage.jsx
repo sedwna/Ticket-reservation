@@ -1,6 +1,6 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/authContext';
 import { useState, useEffect } from 'react';
 import {
   AcademicCapIcon, TicketIcon, ChartBarIcon, EyeIcon,
@@ -17,17 +17,17 @@ const features = [
   {
     icon: TicketIcon, title: 'رزرو آسان و آنلاین',
     description: 'صندلی خود را در چند کلیک ساده و بدون نیاز به حضور فیزیکی رزرو کنید',
-    iconBg: 'bg-brand-100', iconColor: 'text-brand-600',
+    iconBg: 'bg-brand-muted', iconColor: 'text-brand-accent',
   },
   {
     icon: EyeIcon, title: 'مشاهده لحظه‌ای وضعیت',
     description: 'نمایش گرافیکی و لحظه‌ای تمام صندلی‌های سالن با تفکیک رنگ',
-    iconBg: 'bg-amber-100', iconColor: 'text-amber-600',
+    iconBg: 'bg-warning-muted', iconColor: 'text-warning-ink',
   },
   {
     icon: ChartBarIcon, title: 'مدیریت هوشمند',
     description: 'داشبورد مدیریتی کامل با گزارش‌های آماری و نمودارهای تحلیلی',
-    iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600',
+    iconBg: 'bg-success-muted', iconColor: 'text-success-ink',
   },
 ];
 
@@ -37,7 +37,7 @@ const perks = [
   { icon: AcademicCapIcon, label: 'مخصوص دانشگاه بوعلی سینا' },
 ];
 
-function AnimatedStat({ icon: Icon, value, label, delay = 0 }) {
+function AnimatedStat({ icon: Icon, value, label }) {
   const [ref, isVisible] = useScrollReveal({ threshold: 0.3 });
   const [, count] = useCountUp(value, { duration: 1800, startOnView: true });
 
@@ -65,7 +65,7 @@ export default function LandingPage() {
   }, [isAuthenticated, isAdmin, navigate]);
 
   return (
-    <div className="page-shell bg-white">
+    <div className="page-shell bg-surface-card">
       <Navbar />
 
       {/* Hero */}
@@ -109,28 +109,28 @@ export default function LandingPage() {
 
             {/* Live Stats Bar */}
             <div className="grid grid-cols-3 gap-4 max-w-xl mx-auto">
-              <AnimatedStat icon={CalendarDaysIcon} value={stats.active_events} label="رویداد فعال" delay={0} />
-              <AnimatedStat icon={TicketIcon} value={stats.total_seats} label="صندلی" delay={200} />
-              <AnimatedStat icon={UsersIcon} value={stats.total_users} label="کاربر" delay={400} />
+              <AnimatedStat icon={CalendarDaysIcon} value={stats.active_events} label="رویداد فعال" />
+              <AnimatedStat icon={TicketIcon} value={stats.total_seats} label="صندلی" />
+              <AnimatedStat icon={UsersIcon} value={stats.total_users} label="کاربر" />
             </div>
           </div>
         </div>
 
         <div className="absolute bottom-0 left-0 right-0">
           <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
-            <path d="M0 40C240 80 480 0 720 20C960 40 1200 80 1440 40V80H0V40Z" fill="white" />
+            <path d="M0 40C240 80 480 0 720 20C960 40 1200 80 1440 40V80H0V40Z" className="fill-surface-card" />
           </svg>
         </div>
       </section>
 
       {/* Features */}
-      <section className="py-20 sm:py-28 bg-white">
+      <section className="py-20 sm:py-28 bg-surface-card">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-ink-strong mb-4">
               چرا سامانه رزرو صندلی؟
             </h2>
-            <p className="text-slate-500 text-lg max-w-xl mx-auto">
+            <p className="text-ink-muted text-lg max-w-xl mx-auto">
               تجربه‌ای نوین از مدیریت صندلی‌های سالن با امکانات کامل و رابط کاربری ساده
             </p>
           </div>
@@ -141,8 +141,8 @@ export default function LandingPage() {
                 <div className={`w-16 h-16 rounded-2xl ${f.iconBg} flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300`}>
                   <f.icon className={`w-8 h-8 ${f.iconColor}`} />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-3">{f.title}</h3>
-                <p className="text-slate-500 leading-relaxed">{f.description}</p>
+                <h3 className="text-xl font-bold text-ink-strong mb-3">{f.title}</h3>
+                <p className="text-ink-muted leading-relaxed">{f.description}</p>
               </div>
             ))}
           </div>
@@ -150,15 +150,15 @@ export default function LandingPage() {
       </section>
 
       {/* Perks Bar */}
-      <section className="py-12 bg-slate-50 border-y border-slate-100">
+      <section className="py-12 bg-surface-alt border-y border-line">
         <div className="max-w-4xl mx-auto px-4">
           <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12">
             {perks.map((p) => (
               <div key={p.label} className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center">
-                  <p.icon className="w-5 h-5 text-brand-700" />
+                <div className="w-10 h-10 rounded-xl bg-surface-card shadow-sm border border-line flex items-center justify-center">
+                  <p.icon className="w-5 h-5 text-brand-ink" />
                 </div>
-                <span className="text-sm font-semibold text-slate-600">{p.label}</span>
+                <span className="text-sm font-semibold text-ink">{p.label}</span>
               </div>
             ))}
           </div>
@@ -166,12 +166,12 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 sm:py-28 bg-white">
+      <section className="py-20 sm:py-28 bg-surface-card">
         <div className="max-w-3xl mx-auto px-4 text-center">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-ink-strong mb-4">
             همین حالا شروع کنید
           </h2>
-          <p className="text-slate-500 text-lg mb-8">
+          <p className="text-ink-muted text-lg mb-8">
             ثبت‌نام کنید، رویدادهای فعال را مشاهده کنید و صندلی مورد نظر خود را رزرو کنید
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

@@ -8,7 +8,6 @@ import eventService from '../../services/eventService';
 import uploadService from '../../services/uploadService';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
-import Badge from '../../components/common/Badge';
 import EmptyState from '../../components/common/EmptyState';
 import Modal from '../../components/common/Modal';
 import Button from '../../components/common/Button';
@@ -42,11 +41,22 @@ export default function EventManagementPage() {
   const [deleteModal, setDeleteModal] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => { fetchEvents(); }, []);
-
   const fetchEvents = async () => {
-    try { setLoading(true); const r = await eventService.getActiveEvents(); if (r.success) setEvents(r.data || []); } catch {} finally { setLoading(false); }
+    try {
+      setLoading(true);
+      const response = await eventService.getActiveEvents();
+      if (response.success) setEvents(response.data || []);
+    } catch {
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(fetchEvents, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   // Calculate total capacity from rows
   const calcCapacity = (rowList) => rowList.reduce((sum, r) => sum + (parseInt(r.seats) || 0), 0);
@@ -185,17 +195,17 @@ export default function EventManagementPage() {
       <main className="page-content animate-fade-in-up">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h2 className="text-3xl font-extrabold text-slate-900">مدیریت رویدادها</h2>
-            <p className="text-slate-500 mt-1">ایجاد، ویرایش و حذف رویدادهای سالن</p>
+            <h2 className="text-3xl font-extrabold text-ink-strong">مدیریت رویدادها</h2>
+            <p className="text-ink-muted mt-1">ایجاد، ویرایش و حذف رویدادهای سالن</p>
           </div>
           <Button onClick={openCreate} variant="primary" size="md">
             <PlusIcon className="w-5 h-5" /> افزودن رویداد
           </Button>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-100 p-4 mb-6 flex flex-col sm:flex-row gap-3">
+        <div className="bg-surface-card rounded-2xl border border-line p-4 mb-6 flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <MagnifyingGlassIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <MagnifyingGlassIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-faint" />
             <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="جستجو..." className="input-field !pr-10" />
           </div>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input-field sm:w-40">
@@ -209,43 +219,43 @@ export default function EventManagementPage() {
           <div className="card overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-100">
-                  <th className="text-right py-3 px-4 font-semibold text-slate-500 text-xs">عنوان</th>
-                  <th className="text-right py-3 px-4 font-semibold text-slate-500 text-xs">تاریخ</th>
-                  <th className="text-right py-3 px-4 font-semibold text-slate-500 text-xs">ظرفیت</th>
-                  <th className="text-right py-3 px-4 font-semibold text-slate-500 text-xs">پوستر</th>
-                  <th className="text-right py-3 px-4 font-semibold text-slate-500 text-xs">پرشدگی</th>
-                  <th className="text-right py-3 px-4 font-semibold text-slate-500 text-xs">وضعیت</th>
-                  <th className="text-right py-3 px-4 font-semibold text-slate-500 text-xs"></th>
+                <tr className="border-b border-line">
+                  <th className="text-right py-3 px-4 font-semibold text-ink-muted text-xs">عنوان</th>
+                  <th className="text-right py-3 px-4 font-semibold text-ink-muted text-xs">تاریخ</th>
+                  <th className="text-right py-3 px-4 font-semibold text-ink-muted text-xs">ظرفیت</th>
+                  <th className="text-right py-3 px-4 font-semibold text-ink-muted text-xs">پوستر</th>
+                  <th className="text-right py-3 px-4 font-semibold text-ink-muted text-xs">پرشدگی</th>
+                  <th className="text-right py-3 px-4 font-semibold text-ink-muted text-xs">وضعیت</th>
+                  <th className="text-right py-3 px-4 font-semibold text-ink-muted text-xs"></th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map(e => (
-                  <tr key={e.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                    <td className="py-3 px-4 font-medium text-slate-800">{e.title}</td>
-                    <td className="py-3 px-4 text-slate-500">{e.event_date}</td>
-                    <td className="py-3 px-4 text-slate-600">{e.total_capacity}</td>
+                  <tr key={e.id} className="border-b border-line/60 hover:bg-surface-alt/70 transition-colors">
+                    <td className="py-3 px-4 font-medium text-ink-strong">{e.title}</td>
+                    <td className="py-3 px-4 text-ink-muted">{e.event_date}</td>
+                    <td className="py-3 px-4 text-ink">{e.total_capacity}</td>
                     <td className="py-3 px-4">
                       {e.poster_url ? (
-                        <img src={e.poster_url} alt="" className="w-10 h-10 rounded-lg object-cover border border-slate-200" />
+                        <img src={e.poster_url} alt="" className="w-10 h-10 rounded-lg object-cover border border-line-strong" />
                       ) : (
-                        <span className="text-xs text-slate-300">—</span>
+                        <span className="text-xs text-ink-subtle">—</span>
                       )}
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-slate-100 rounded-full max-w-20">
+                        <div className="flex-1 h-1.5 bg-surface-muted rounded-full max-w-20">
                           <div className={`h-full rounded-full ${e.occupancy_rate >= 90 ? 'bg-red-400' : e.occupancy_rate >= 70 ? 'bg-amber-400' : 'bg-emerald-400'}`}
                             style={{ width: `${Math.min(100, e.occupancy_rate)}%` }} />
                         </div>
-                        <span className="text-xs text-slate-400">{Math.round(e.occupancy_rate || 0)}%</span>
+                        <span className="text-xs text-ink-faint">{Math.round(e.occupancy_rate || 0)}%</span>
                       </div>
                     </td>
                     <td className="py-3 px-4">
                       <select
                         value={e.status}
                         onChange={(ev) => handleStatusChange(e.id, ev.target.value)}
-                        className="text-xs font-semibold rounded-lg border border-slate-200 py-1.5 px-2 bg-white cursor-pointer hover:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all"
+                        className="text-xs font-semibold rounded-lg border border-line-strong py-1.5 px-2 bg-surface-card cursor-pointer hover:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all"
                       >
                         <option value="ACTIVE">فعال</option>
                         <option value="CLOSED">پایان ثبت‌نام</option>
@@ -256,7 +266,7 @@ export default function EventManagementPage() {
                     <td className="py-3 px-4">
                       <div className="flex gap-1">
                         <Button onClick={() => openEdit(e)} variant="icon" size="icon" className="!w-8 !h-8 !rounded-lg"><PencilSquareIcon className="w-4 h-4" /></Button>
-                        <Button onClick={() => setDeleteModal(e)} variant="icon" size="icon" className="!w-8 !h-8 !rounded-lg !text-red-400 hover:!text-red-600 hover:!bg-red-50"><TrashIcon className="w-4 h-4" /></Button>
+                        <Button onClick={() => setDeleteModal(e)} variant="icon" size="icon" className="!w-8 !h-8 !rounded-lg !text-red-400 hover:!text-danger-ink hover:!bg-danger-soft"><TrashIcon className="w-4 h-4" /></Button>
                       </div>
                     </td>
                   </tr>
@@ -272,14 +282,14 @@ export default function EventManagementPage() {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">عنوان *</label>
+              <label className="block text-sm font-medium text-ink mb-1">عنوان *</label>
               <input type="text" value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="input-field" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">پوستر رویداد</label>
+              <label className="block text-sm font-medium text-ink mb-1">پوستر رویداد</label>
               <div className="flex items-center gap-3">
                 {posterPreview ? (
-                  <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 flex-shrink-0">
+                  <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-line-strong flex-shrink-0">
                     <img src={posterPreview} alt="" className="w-full h-full object-cover" />
                     <button type="button" onClick={() => { setPosterFile(null); setPosterPreview(''); setPosterURL(''); }}
                       className="absolute inset-0 bg-black/40 flex items-center justify-center hover:bg-black/60 transition-colors">
@@ -288,11 +298,11 @@ export default function EventManagementPage() {
                   </div>
                 ) : (
                   <button type="button" onClick={() => fileInputRef.current?.click()}
-                    className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 hover:border-brand-400 hover:text-brand-500 transition-colors">
+                    className="w-16 h-16 rounded-xl border-2 border-dashed border-line-strong flex items-center justify-center text-ink-faint hover:border-brand-400 hover:text-brand-accent transition-colors">
                     <PhotoIcon className="w-6 h-6" />
                   </button>
                 )}
-                <div className="text-xs text-slate-400">
+                <div className="text-xs text-ink-faint">
                   <p>jpg، png یا webp</p>
                   <p>حداکثر ۵ مگابایت</p>
                 </div>
@@ -302,28 +312,28 @@ export default function EventManagementPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">توضیحات</label>
+            <label className="block text-sm font-medium text-ink mb-1">توضیحات</label>
             <textarea rows={2} value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="input-field" />
           </div>
 
           <div className="grid grid-cols-3 gap-4">
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">تاریخ *</label><input type="date" value={form.event_date} onChange={e => setForm({...form, event_date: e.target.value})} className="input-field ltr text-left" dir="ltr" /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">شروع *</label><input type="time" value={form.start_time} onChange={e => setForm({...form, start_time: e.target.value})} className="input-field ltr text-left" dir="ltr" /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">پایان *</label><input type="time" value={form.end_time} onChange={e => setForm({...form, end_time: e.target.value})} className="input-field ltr text-left" dir="ltr" /></div>
+            <div><label className="block text-sm font-medium text-ink mb-1">تاریخ *</label><input type="date" value={form.event_date} onChange={e => setForm({...form, event_date: e.target.value})} className="input-field ltr text-left" dir="ltr" /></div>
+            <div><label className="block text-sm font-medium text-ink mb-1">شروع *</label><input type="time" value={form.start_time} onChange={e => setForm({...form, start_time: e.target.value})} className="input-field ltr text-left" dir="ltr" /></div>
+            <div><label className="block text-sm font-medium text-ink mb-1">پایان *</label><input type="time" value={form.end_time} onChange={e => setForm({...form, end_time: e.target.value})} className="input-field ltr text-left" dir="ltr" /></div>
           </div>
 
           {/* Hall Configuration */}
           {!editing && (
-            <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
+            <div className="bg-surface-alt rounded-xl p-5 border border-line">
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-bold text-slate-800">پیکربندی سالن</h4>
+                <h4 className="font-bold text-ink-strong">پیکربندی سالن</h4>
                 <div className="flex items-center gap-3">
                   {!useLegacy && (
-                    <Button type="button" onClick={addRow} variant="ghost" size="sm" className="!py-1.5 !px-3 !text-brand-600 hover:!bg-brand-50">
+                    <Button type="button" onClick={addRow} variant="ghost" size="sm" className="!py-1.5 !px-3 !text-brand-accent hover:!bg-brand-soft">
                       <PlusIcon className="w-3.5 h-3.5" /> افزودن ردیف
                     </Button>
                   )}
-                  <label className="flex items-center gap-2 text-xs text-slate-500 cursor-pointer">
+                  <label className="flex items-center gap-2 text-xs text-ink-muted cursor-pointer">
                     <input type="checkbox" checked={useLegacy} onChange={(e) => setUseLegacy(e.target.checked)} className="rounded" />
                     حالت ساده (تعداد یکسان)
                   </label>
@@ -332,20 +342,20 @@ export default function EventManagementPage() {
 
               {useLegacy ? (
                 <div className="grid grid-cols-2 gap-4">
-                  <div><label className="block text-xs text-slate-500 mb-1">تعداد ردیف</label><input type="number" min="1" value={legacyRows} onChange={e => setLegacyRows(parseInt(e.target.value) || 1)} className="input-field ltr text-left" dir="ltr" /></div>
-                  <div><label className="block text-xs text-slate-500 mb-1">صندلی در هر ردیف</label><input type="number" min="1" value={legacySeats} onChange={e => setLegacySeats(parseInt(e.target.value) || 1)} className="input-field ltr text-left" dir="ltr" /></div>
+                  <div><label className="block text-xs text-ink-muted mb-1">تعداد ردیف</label><input type="number" min="1" value={legacyRows} onChange={e => setLegacyRows(parseInt(e.target.value) || 1)} className="input-field ltr text-left" dir="ltr" /></div>
+                  <div><label className="block text-xs text-ink-muted mb-1">صندلی در هر ردیف</label><input type="number" min="1" value={legacySeats} onChange={e => setLegacySeats(parseInt(e.target.value) || 1)} className="input-field ltr text-left" dir="ltr" /></div>
                 </div>
               ) : (
                 <>
                   <div className="space-y-2 mb-3">
                     {rows.map((row, i) => (
-                      <div key={i} className="flex items-center gap-3 bg-white rounded-lg p-3 border border-slate-200">
-                        <span className="text-xs font-bold text-slate-400 w-12 text-center">
+                      <div key={i} className="flex items-center gap-3 bg-surface-card rounded-lg p-3 border border-line-strong">
+                        <span className="text-xs font-bold text-ink-faint w-12 text-center">
                           ردیف {String.fromCharCode(65 + i)}
                         </span>
                         <div className="flex-1 flex items-center gap-3">
                           <div className="flex items-center gap-2">
-                            <label className="text-xs text-slate-400">صندلی:</label>
+                            <label className="text-xs text-ink-faint">صندلی:</label>
                             <input type="number" min="1" max="30" value={row.seats} onChange={e => updateRow(i, 'seats', e.target.value)}
                               className="input-field !w-20 !py-1.5 !text-xs ltr text-left" dir="ltr" />
                           </div>
@@ -356,18 +366,18 @@ export default function EventManagementPage() {
                           </select>
                         </div>
                         <div className="flex items-center gap-1">
-                          <button type="button" onClick={() => moveRow(i, -1)} className="p-1 text-slate-300 hover:text-slate-600"><ArrowUpIcon className="w-3.5 h-3.5" /></button>
-                          <button type="button" onClick={() => moveRow(i, 1)} className="p-1 text-slate-300 hover:text-slate-600"><ArrowDownIcon className="w-3.5 h-3.5" /></button>
-                          <button type="button" onClick={() => removeRow(i)} className="p-1 text-slate-300 hover:text-red-500"><XMarkIcon className="w-4 h-4" /></button>
+                          <button type="button" onClick={() => moveRow(i, -1)} className="p-1 text-ink-subtle hover:text-ink"><ArrowUpIcon className="w-3.5 h-3.5" /></button>
+                          <button type="button" onClick={() => moveRow(i, 1)} className="p-1 text-ink-subtle hover:text-ink"><ArrowDownIcon className="w-3.5 h-3.5" /></button>
+                          <button type="button" onClick={() => removeRow(i)} className="p-1 text-ink-subtle hover:text-red-500"><XMarkIcon className="w-4 h-4" /></button>
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  <div className="flex items-center gap-4 text-sm text-slate-600 bg-white rounded-lg p-3 border border-slate-100">
-                    <span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-brand-500"></span> مجموع: <strong className="text-brand-700">{totalCap}</strong> صندلی</span>
-                    <span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-400"></span> VIP: <strong className="text-amber-600">{vipCount}</strong></span>
-                    <span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-slate-400"></span> معمولی: <strong className="text-slate-600">{totalCap - vipCount}</strong></span>
+                  <div className="flex items-center gap-4 text-sm text-ink bg-surface-card rounded-lg p-3 border border-line">
+                    <span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-brand-500"></span> مجموع: <strong className="text-brand-ink">{totalCap}</strong> صندلی</span>
+                    <span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-400"></span> VIP: <strong className="text-warning-ink">{vipCount}</strong></span>
+                    <span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-ink-faint"></span> معمولی: <strong className="text-ink">{totalCap - vipCount}</strong></span>
                   </div>
                 </>
               )}
@@ -386,8 +396,8 @@ export default function EventManagementPage() {
       {/* Delete Modal */}
       <Modal isOpen={!!deleteModal} onClose={() => setDeleteModal(null)} title="حذف رویداد" size="sm">
         <div className="text-center">
-          <p className="text-slate-600 mb-4">آیا از حذف این رویداد اطمینان دارید؟</p>
-          {deleteModal && <div className="bg-red-50 rounded-xl p-4 mb-6 text-sm"><p className="font-bold">{deleteModal.title}</p></div>}
+          <p className="text-ink mb-4">آیا از حذف این رویداد اطمینان دارید؟</p>
+          {deleteModal && <div className="bg-danger-soft rounded-xl p-4 mb-6 text-sm"><p className="font-bold">{deleteModal.title}</p></div>}
           <div className="flex gap-3 justify-center">
             <Button onClick={() => setDeleteModal(null)} variant="ghost" size="md">انصراف</Button>
             <Button onClick={handleDelete} disabled={deleting} variant="danger" size="md">{deleting ? 'حذف...' : 'حذف'}</Button>

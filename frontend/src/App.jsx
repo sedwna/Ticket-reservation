@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/authContext';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
@@ -13,6 +14,7 @@ import ReportsPage from './pages/admin/ReportsPage';
 import ProfilePage from './pages/auth/ProfilePage';
 import Button from './components/common/Button';
 import LoadingSkeleton from './components/common/LoadingSkeleton';
+import ThemeToggle from './components/common/ThemeToggle';
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { isAuthenticated, isAdmin, loading } = useAuth();
@@ -47,12 +49,13 @@ function AppRoutes() {
 
       <Route path="*" element={
         <div className="min-h-screen flex items-center justify-center bg-surface">
+          <ThemeToggle className="fixed left-4 top-4 sm:left-6 sm:top-6" />
           <div className="text-center animate-fade-in-up">
-            <div className="w-24 h-24 rounded-3xl bg-slate-100 flex items-center justify-center mx-auto mb-6">
-              <span className="text-5xl font-extrabold text-slate-300">۴۰۴</span>
+            <div className="w-24 h-24 rounded-3xl bg-surface-muted flex items-center justify-center mx-auto mb-6">
+              <span className="text-5xl font-extrabold text-ink-subtle">۴۰۴</span>
             </div>
-            <h1 className="text-3xl font-extrabold text-slate-900 mb-2">صفحه یافت نشد</h1>
-            <p className="text-slate-500 mb-8">صفحه‌ای که به دنبال آن هستید وجود ندارد</p>
+            <h1 className="text-3xl font-extrabold text-ink-strong mb-2">صفحه یافت نشد</h1>
+            <p className="text-ink-muted mb-8">صفحه‌ای که به دنبال آن هستید وجود ندارد</p>
             <Button to="/" variant="primary" size="md">بازگشت به صفحه اصلی</Button>
           </div>
         </div>
