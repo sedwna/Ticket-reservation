@@ -58,26 +58,51 @@ export function useParallax(speed = 0.3) {
 export function useCountUp(target, { duration = 1500, startOnView = true } = {}) {
   const [count, setCount] = useState(0);
   const [ref, isVisible] = useScrollReveal({ threshold: 0.3 });
-  const started = useRef(false);
+  const currentCount = useRef(0);
+  const numericTarget = Number.isFinite(Number(target)) ? Math.max(0, Math.round(Number(target))) : 0;
 
   useEffect(() => {
     if (startOnView && !isVisible) return;
-    if (started.current) return;
-    started.current = true;
+
+    const startValue = currentCount.current;
+    const difference = numericTarget - startValue;
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    if (difference === 0) {
+      return;
+    }
+
+    if (reduceMotion || duration <= 0) {
+      const immediateFrame = requestAnimationFrame(() => {
+        currentCount.current = numericTarget;
+        setCount(numericTarget);
+      });
+      return () => cancelAnimationFrame(immediateFrame);
+    }
 
     const startTime = performance.now();
+    let frameId;
+
     const animate = (now) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
       // Ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.round(eased * target));
-      if (progress < 1) requestAnimationFrame(animate);
-    };
-    requestAnimationFrame(animate);
-  }, [target, duration, startOnView, isVisible]);
+      const nextCount = Math.round(startValue + (difference * eased));
 
-  return [ref, count];
+      currentCount.current = nextCount;
+      setCount(nextCount);
+
+      if (progress < 1) {
+        frameId = requestAnimationFrame(animate);
+      }
+    };
+    frameId = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(frameId);
+  }, [numericTarget, duration, startOnView, isVisible]);
+
+  return [ref, count, isVisible];
 }
 
 // ── Stagger item component props ──

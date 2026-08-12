@@ -10,8 +10,7 @@ import {
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import publicService from '../services/publicService';
-import defaultData from '../data/defaultData';
-import { useScrollReveal, useCountUp, staggerProps } from '../utils/animations';
+import { useCountUp, staggerProps } from '../utils/animations';
 
 const features = [
   {
@@ -37,16 +36,24 @@ const perks = [
   { icon: AcademicCapIcon, label: 'مخصوص دانشگاه بوعلی سینا' },
 ];
 
-function AnimatedStat({ icon: Icon, value, label }) {
-  const [ref, isVisible] = useScrollReveal({ threshold: 0.3 });
-  const [, count] = useCountUp(value, { duration: 1800, startOnView: true });
+function AnimatedStat({ icon: Icon, value, label, loading }) {
+  const hasValue = value !== null && value !== undefined && Number.isFinite(Number(value));
+  const [ref, count, isVisible] = useCountUp(value, { duration: 1800, startOnView: true });
 
   return (
     <div ref={ref} className={`text-center p-6 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
       <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center mx-auto mb-3">
         <Icon className="w-7 h-7 text-accent-400" />
       </div>
-      <p className="text-4xl font-extrabold text-white stat-counter mb-1">{isVisible ? count : 0}</p>
+      <p className="text-4xl font-extrabold text-white stat-counter mb-1" aria-live="polite">
+        {loading ? (
+          <span className="inline-block h-10 w-12 animate-pulse rounded-lg bg-white/10" aria-label="در حال دریافت آمار" />
+        ) : hasValue ? (
+          isVisible ? count : 0
+        ) : (
+          <span title="آمار در دسترس نیست">—</span>
+        )}
+      </p>
       <p className="text-sm text-white/60">{label}</p>
     </div>
   );
@@ -55,13 +62,33 @@ function AnimatedStat({ icon: Icon, value, label }) {
 export default function LandingPage() {
   const { isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const [stats, setStats] = useState({ active_events: 0, total_seats: 0, total_users: 0 });
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
     if (isAuthenticated) { navigate(isAdmin ? '/admin/dashboard' : '/events'); return; }
+
+    let cancelled = false;
+
     publicService.getStats()
-      .then(r => { if (r.success) setStats(r.data); else setStats(defaultData.stats); })
-      .catch(() => { setStats(defaultData.stats); });
+      .then((response) => {
+        if (!response.success || !response.data) throw new Error('Invalid public stats response');
+        if (cancelled) return;
+
+        setStats({
+          active_events: Number(response.data.active_events) || 0,
+          total_seats: Number(response.data.total_seats) || 0,
+          total_users: Number(response.data.total_users) || 0,
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setStats(null);
+      })
+      .finally(() => {
+        if (!cancelled) setStatsLoading(false);
+      });
+
+    return () => { cancelled = true; };
   }, [isAuthenticated, isAdmin, navigate]);
 
   return (
@@ -87,7 +114,7 @@ export default function LandingPage() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold leading-tight mb-6 tracking-tight text-pretty">
-              رزرو صندلی،
+              رزرو صندلی
               <br />
               <span className="bg-gradient-to-l from-accent-400 via-amber-300 to-amber-200 bg-clip-text text-transparent animate-gradient" style={{ backgroundSize: '200% 200%' }}>
                 آسان و هوشمند
@@ -109,9 +136,9 @@ export default function LandingPage() {
 
             {/* Live Stats Bar */}
             <div className="grid grid-cols-3 gap-4 max-w-xl mx-auto">
-              <AnimatedStat icon={CalendarDaysIcon} value={stats.active_events} label="رویداد فعال" />
-              <AnimatedStat icon={TicketIcon} value={stats.total_seats} label="صندلی" />
-              <AnimatedStat icon={UsersIcon} value={stats.total_users} label="کاربر" />
+              <AnimatedStat icon={CalendarDaysIcon} value={stats?.active_events} label="رویداد فعال" loading={statsLoading} />
+              <AnimatedStat icon={TicketIcon} value={stats?.total_seats} label="صندلی" loading={statsLoading} />
+              <AnimatedStat icon={UsersIcon} value={stats?.total_users} label="کاربر" loading={statsLoading} />
             </div>
           </div>
         </div>
