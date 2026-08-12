@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import reservationService from '../../services/reservationService';
 import eventService from '../../services/eventService';
+import defaultData from '../../data/defaultData';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import Badge from '../../components/common/Badge';
@@ -45,16 +46,30 @@ export default function ReportsPage() {
           reservationService.getStats(),
         ]);
         if (evts.success) setEvents(evts.data || []);
+        else setEvents(defaultData.events);
         if (occ.success) setGlobalOccupancy(occ.data);
+        else setGlobalOccupancy(defaultData.occupancyData);
         if (stats.success) setTrend(stats.data?.reservation_trend || []);
+        else setTrend(defaultData.stats.reservation_trend);
 
         // Load all reservations
         const allRes = await reservationService.getAll();
         if (allRes.success) {
           setAllReservations(allRes.data || []);
           setFilteredReservations(allRes.data || []);
+        } else {
+          const fallbackReservations = [...defaultData.reservations.active, ...defaultData.reservations.history];
+          setAllReservations(fallbackReservations);
+          setFilteredReservations(fallbackReservations);
         }
-      } catch {} finally { setLoading(false); }
+      } catch {
+        const fallbackReservations = [...defaultData.reservations.active, ...defaultData.reservations.history];
+        setEvents(defaultData.events);
+        setGlobalOccupancy(defaultData.occupancyData);
+        setTrend(defaultData.stats.reservation_trend);
+        setAllReservations(fallbackReservations);
+        setFilteredReservations(fallbackReservations);
+      } finally { setLoading(false); }
     };
     init();
   }, []);

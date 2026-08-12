@@ -6,6 +6,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import reservationService from '../../services/reservationService';
+import defaultData from '../../data/defaultData';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import Badge from '../../components/common/Badge';
@@ -28,8 +29,10 @@ export default function DashboardPage() {
     try {
       const r = await reservationService.getStats();
       if (r.success) setStats(r.data);
-    } catch { /* */ }
-    finally { setLoading(false); }
+      else setStats(defaultData.stats);
+    } catch {
+      setStats(defaultData.stats);
+    } finally { setLoading(false); }
   };
 
   return (

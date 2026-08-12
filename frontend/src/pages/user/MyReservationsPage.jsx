@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { CalendarDaysIcon, ClockIcon, TicketIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import reservationService from '../../services/reservationService';
+import defaultData from '../../data/defaultData';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import Badge from '../../components/common/Badge';
+import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import EmptyState from '../../components/common/EmptyState';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
@@ -28,9 +30,13 @@ export default function MyReservationsPage() {
         reservationService.getMyReservations('history'),
       ]);
       if (a.success) setActive(a.data || []);
+      else setActive(defaultData.reservations.active);
       if (h.success) setHistory(h.data || []);
-    } catch { /* interceptor */ }
-    finally { setLoading(false); }
+      else setHistory(defaultData.reservations.history);
+    } catch {
+      setActive(defaultData.reservations.active);
+      setHistory(defaultData.reservations.history);
+    } finally { setLoading(false); }
   };
 
   const handleCancel = async () => {

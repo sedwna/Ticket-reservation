@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MagnifyingGlassIcon, CalendarDaysIcon, ClockIcon } from '@heroicons/react/24/outline';
 import eventService from '../../services/eventService';
+import defaultData from '../../data/defaultData';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import Badge from '../../components/common/Badge';
+import Button from '../../components/common/Button';
 import EmptyState from '../../components/common/EmptyState';
 import { CardSkeleton } from '../../components/common/LoadingSkeleton';
 
@@ -21,9 +23,14 @@ export default function EventsListPage() {
     try {
       setLoading(true);
       const r = await eventService.getActiveEvents();
-      if (r.success) setEvents(r.data || []);
-    } catch { /* handled by interceptor */ }
-    finally { setLoading(false); }
+      if (r.success) {
+        setEvents(r.data || []);
+      } else {
+        setEvents(defaultData.events);
+      }
+    } catch {
+      setEvents(defaultData.events);
+    } finally { setLoading(false); }
   };
 
   const filtered = events.filter(e => {

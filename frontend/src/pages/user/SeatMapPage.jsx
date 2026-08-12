@@ -4,6 +4,7 @@ import { ArrowRightIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import eventService from '../../services/eventService';
 import reservationService from '../../services/reservationService';
+import defaultData from '../../data/defaultData';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import Modal from '../../components/common/Modal';
@@ -35,10 +36,19 @@ export default function SeatMapPage() {
     try {
       setLoading(true);
       const r = await eventService.getSeatMap(eventId);
-      if (r.success) setSeatMap(r.data);
-      else toast.error(r.message || 'خطا در دریافت نقشه');
+      if (r.success) {
+        setSeatMap(r.data);
+      } else if (defaultData.seatMaps[eventId]) {
+        setSeatMap(defaultData.seatMaps[eventId]);
+      } else {
+        toast.error(r.message || 'خطا در دریافت نقشه');
+      }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'خطا در ارتباط با سرور');
+      if (defaultData.seatMaps[eventId]) {
+        setSeatMap(defaultData.seatMaps[eventId]);
+      } else {
+        toast.error(err.response?.data?.message || 'خطا در ارتباط با سرور');
+      }
     } finally { setLoading(false); }
   };
 

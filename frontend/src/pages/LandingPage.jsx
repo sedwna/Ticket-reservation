@@ -10,6 +10,7 @@ import {
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import publicService from '../services/publicService';
+import defaultData from '../data/defaultData';
 import { useScrollReveal, useCountUp, staggerProps } from '../utils/animations';
 
 const features = [
@@ -58,7 +59,9 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (isAuthenticated) { navigate(isAdmin ? '/admin/dashboard' : '/events'); return; }
-    publicService.getStats().then(r => { if (r.success) setStats(r.data); }).catch(() => {});
+    publicService.getStats()
+      .then(r => { if (r.success) setStats(r.data); else setStats(defaultData.stats); })
+      .catch(() => { setStats(defaultData.stats); });
   }, [isAuthenticated, isAdmin, navigate]);
 
   return (
