@@ -16,6 +16,7 @@ export default function UserManagementPage() {
   const [roleFilter, setRoleFilter] = useState('');
   const [roleModal, setRoleModal] = useState(null);
   const [roleLoading, setRoleLoading] = useState(false);
+  const [statusLoadingId, setStatusLoadingId] = useState(null);
 
   useEffect(() => { fetchUsers(); }, []);
 
@@ -23,14 +24,22 @@ export default function UserManagementPage() {
     try { setLoading(true); const r = await adminService.getUsers(); if (r.success) setUsers(r.data || []); } catch {} finally { setLoading(false); }
   };
 
-  const toggleStatus = async (userId) => {
+  const toggleStatus = async (user) => {
+    const nextIsActive = !user.is_active;
+    setStatusLoadingId(user.id);
+
     try {
-      const r = await adminService.toggleUserStatus(userId);
+      const r = await adminService.toggleUserStatus(user.id);
       if (r.success) {
-        setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_active: !u.is_active } : u));
-        toast.success('وضعیت کاربر تغییر کرد');
+        setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_active: nextIsActive } : u));
+        const fullName = `${user.first_name} ${user.last_name}`;
+        toast.success(`کاربر «${fullName}» ${nextIsActive ? 'فعال' : 'غیرفعال'} شد`);
       } else toast.error(r.message);
-    } catch { toast.error('خطا'); }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'خطا در تغییر وضعیت کاربر');
+    } finally {
+      setStatusLoadingId(null);
+    }
   };
 
   const changeRole = async () => {
@@ -106,8 +115,13 @@ export default function UserManagementPage() {
                     <td className="py-3 px-4"><Badge status={u.role} size="xs" /></td>
                     <td className="py-3 px-4 text-slate-600">{u.reservation_count || 0}</td>
                     <td className="py-3 px-4">
-                      <button onClick={() => toggleStatus(u.id)}
-                        className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors ${u.is_active ? 'bg-emerald-500' : 'bg-slate-200'}`}>
+                      <button
+                        type="button"
+                        onClick={() => toggleStatus(u)}
+                        disabled={statusLoadingId === u.id}
+                        aria-label={`${u.is_active ? 'غیرفعال کردن' : 'فعال کردن'} ${u.first_name} ${u.last_name}`}
+                        title={u.is_active ? 'غیرفعال کردن کاربر' : 'فعال کردن کاربر'}
+                        className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors disabled:cursor-wait disabled:opacity-60 ${u.is_active ? 'bg-emerald-500' : 'bg-slate-200'}`}>
                         <span className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${u.is_active ? 'translate-x-5' : 'translate-x-1'}`} />
                       </button>
                     </td>
