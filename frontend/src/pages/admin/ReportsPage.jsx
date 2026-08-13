@@ -399,7 +399,7 @@ export default function ReportsPage() {
 
                 {!hasActiveFilters && sortedBarData.length > 0 && (
                   <>
-                    <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    <div className="mb-4 grid grid-cols-2 gap-2">
                       <div className="rounded-xl border border-line bg-surface-alt px-3 py-2.5">
                         <p className="text-[10px] font-medium text-ink-faint">پرشدگی کل</p>
                         <p className="mt-1 text-base font-extrabold text-ink-strong tabular-nums" dir="ltr">
@@ -412,9 +412,9 @@ export default function ReportsPage() {
                           {totalAvailableSeats.toLocaleString('fa-IR')}
                         </p>
                       </div>
-                      <div className="col-span-2 rounded-xl border border-line bg-surface-alt px-3 py-2.5 sm:col-span-1">
+                      <div className="col-span-2 min-w-0 rounded-xl border border-line bg-surface-alt px-3 py-3">
                         <p className="text-[10px] font-medium text-ink-faint">بیشترین تقاضا</p>
-                        <p className="mt-1 truncate text-sm font-bold text-ink-strong" title={leadingEvent.name}>
+                        <p className="mt-1.5 whitespace-normal break-words text-sm font-bold leading-6 text-ink-strong">
                           {leadingEvent.name}
                         </p>
                       </div>
