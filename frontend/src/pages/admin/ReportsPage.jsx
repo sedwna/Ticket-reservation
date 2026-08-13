@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import {
   ArrowDownTrayIcon, MagnifyingGlassIcon, FunnelIcon,
-  CalendarDaysIcon, ChartBarIcon, CheckCircleIcon, CheckIcon, ChevronDownIcon,
+  ChartBarIcon, CheckCircleIcon, CheckIcon, ChevronDownIcon,
   LightBulbIcon, TicketIcon, XMarkIcon,
 } from '@heroicons/react/24/outline';
 import {
@@ -49,13 +49,32 @@ const haveSameEventIDs = (first = [], second = []) => (
   first.length === second.length && first.every((id) => second.includes(id))
 );
 
-const filterReservationsLocally = (reservations = [], filters = createEmptyFilters()) => (
-  reservations.filter((reservation) => {
-    if (filters.event_ids.length > 0 && !filters.event_ids.includes(reservation.event_id)) {
+const normalizeIdentifier = (value) => String(value ?? '').trim().toLowerCase();
+
+const filterReservationsLocally = (
+  reservations = [],
+  filters = createEmptyFilters(),
+  events = [],
+) => {
+  const selectedEventIDs = new Set(filters.event_ids.map(normalizeIdentifier));
+  const selectedEventTitles = new Set(
+    events
+      .filter((event) => selectedEventIDs.has(normalizeIdentifier(event.id)))
+      .map((event) => normalizeIdentifier(event.title)),
+  );
+
+  return reservations.filter((reservation) => {
+    const reservationEventID = normalizeIdentifier(reservation.event_id ?? reservation.event?.id);
+    const reservationEventTitle = normalizeIdentifier(reservation.event_title ?? reservation.event?.title);
+    if (
+      selectedEventIDs.size > 0
+      && !selectedEventIDs.has(reservationEventID)
+      && !selectedEventTitles.has(reservationEventTitle)
+    ) {
       return false;
     }
 
-    const reservationDate = String(reservation.reserved_at || '').slice(0, 10);
+    const reservationDate = String(reservation.reserved_at || reservation.created_at || '').slice(0, 10);
     if (filters.date_from && (!reservationDate || reservationDate < filters.date_from)) {
       return false;
     }
@@ -64,8 +83,8 @@ const filterReservationsLocally = (reservations = [], filters = createEmptyFilte
     }
 
     return true;
-  })
-);
+  });
+};
 
 export default function ReportsPage() {
   // Filter state
@@ -82,7 +101,6 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [allReservations, setAllReservations] = useState([]);
   const [filteredReservations, setFilteredReservations] = useState([]);
-  const [eventReport, setEventReport] = useState(null);
   const [trend, setTrend] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -155,36 +173,22 @@ export default function ReportsPage() {
 
     setRefreshing(true);
     try {
-      const filters = {};
-      if (nextFilters.event_ids.length > 0) filters.event_ids = nextFilters.event_ids.join(',');
-      if (nextFilters.date_from) filters.date_from = nextFilters.date_from;
-      if (nextFilters.date_to) filters.date_to = nextFilters.date_to;
-
-      const res = await reservationService.getAll(filters);
+      // Always fetch the complete source and apply one shared client-side filter.
+      // This keeps the table and both charts consistent even with an older backend.
+      const res = await reservationService.getAll();
       if (!res.success) throw new Error('Failed to filter reservations');
 
       const responseReservations = res.data || [];
-      const verifiedReservations = filterReservationsLocally(responseReservations, nextFilters);
+      const verifiedReservations = filterReservationsLocally(responseReservations, nextFilters, events);
+      setAllReservations(responseReservations);
       setFilteredReservations(verifiedReservations);
-      if (nextFilters.event_ids.length === 0 && !nextFilters.date_from && !nextFilters.date_to) {
-        setAllReservations(responseReservations);
-      }
       setAppliedFilters({ ...nextFilters, event_ids: [...nextFilters.event_ids] });
-
-      // A detailed event report is only meaningful for a single selected event.
-      if (nextFilters.event_ids.length === 1) {
-        try {
-          const report = await reservationService.getEventReport(nextFilters.event_ids[0]);
-          setEventReport(report.success ? report.data : null);
-        } catch {
-          setEventReport(null);
-        }
-      } else {
-        setEventReport(null);
-      }
+      toast.success(
+        `${verifiedReservations.length.toLocaleString('fa-IR')} از ${responseReservations.length.toLocaleString('fa-IR')} رزرو نمایش داده می‌شود`,
+      );
     } catch { toast.error('خطا در دریافت داده‌ها'); }
     finally { setRefreshing(false); }
-  }, [eventFilter, dateFrom, dateTo]);
+  }, [eventFilter, dateFrom, dateTo, events]);
 
   const handleApplyClick = () => applyFilters();
 
@@ -989,16 +993,16 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            {/* Event Report Summary */}
-            {eventReport && (
-              <div className="grid sm:grid-cols-3 gap-4 mb-8">
+            {/* Single-event filtered summary */}
+            {singleSelectedEvent && (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <div className="card p-5 flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-brand-soft flex items-center justify-center">
-                    <CalendarDaysIcon className="w-6 h-6 text-brand-accent" />
+                    <ChartBarIcon className="w-6 h-6 text-brand-accent" />
                   </div>
                   <div>
-                    <p className="text-2xl font-extrabold text-ink-strong">{eventReport.total_capacity}</p>
-                    <p className="text-xs text-ink-muted">ظرفیت کل</p>
+                    <p className="text-2xl font-extrabold text-ink-strong">{singleSelectedEvent.matchingCount.toLocaleString('fa-IR')}</p>
+                    <p className="text-xs text-ink-muted">کل نتایج منطبق</p>
                   </div>
                 </div>
                 <div className="card p-5 flex items-center gap-4">
@@ -1006,8 +1010,17 @@ export default function ReportsPage() {
                     <CheckCircleIcon className="w-6 h-6 text-success-ink" />
                   </div>
                   <div>
-                    <p className="text-2xl font-extrabold text-ink-strong">{eventReport.reserved_count}</p>
-                    <p className="text-xs text-ink-muted">رزرو شده</p>
+                    <p className="text-2xl font-extrabold text-ink-strong">{singleSelectedEvent.matchingActive.toLocaleString('fa-IR')}</p>
+                    <p className="text-xs text-ink-muted">فعال در نتایج</p>
+                  </div>
+                </div>
+                <div className="card p-5 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-danger-soft flex items-center justify-center">
+                    <XMarkIcon className="w-6 h-6 text-danger-ink" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-extrabold text-ink-strong">{singleSelectedEvent.matchingCancelled.toLocaleString('fa-IR')}</p>
+                    <p className="text-xs text-ink-muted">لغوشده در نتایج</p>
                   </div>
                 </div>
                 <div className="card p-5 flex items-center gap-4">
@@ -1015,8 +1028,8 @@ export default function ReportsPage() {
                     <TicketIcon className="w-6 h-6 text-warning-ink" />
                   </div>
                   <div>
-                    <p className="text-2xl font-extrabold text-ink-strong">{eventReport.available_count}</p>
-                    <p className="text-xs text-ink-muted">صندلی آزاد</p>
+                    <p className="text-2xl font-extrabold text-ink-strong">{singleSelectedEvent.matchingCompleted.toLocaleString('fa-IR')}</p>
+                    <p className="text-xs text-ink-muted">تکمیل‌شده در نتایج</p>
                   </div>
                 </div>
               </div>
@@ -1043,7 +1056,9 @@ export default function ReportsPage() {
             <div className="card overflow-x-auto">
               <h3 className="text-lg font-bold text-ink-strong p-6 pb-4">
                 جزئیات رزروها
-                {eventReport && <span className="text-sm font-normal text-ink-faint mr-2">— {eventReport.event_title}</span>}
+                {appliedEvents.length === 1 && (
+                  <span className="text-sm font-normal text-ink-faint mr-2">— {appliedEvents[0].title}</span>
+                )}
               </h3>
               {filteredReservations.length === 0 ? (
                 <p className="text-ink-faint text-center py-16">
