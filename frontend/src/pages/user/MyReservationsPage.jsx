@@ -144,7 +144,10 @@ export default function MyReservationsPage() {
           <div className="w-14 h-14 rounded-full bg-danger-soft flex items-center justify-center mx-auto mb-4">
             <ExclamationTriangleIcon className="w-8 h-8 text-red-400" />
           </div>
-          <p className="text-ink mb-4">آیا از لغو این رزرو اطمینان دارید؟ این عملیات قابل بازگشت نیست.</p>
+          <p className="text-ink mb-2">آیا از لغو این رزرو اطمینان دارید؟ این عملیات قابل بازگشت نیست.</p>
+          <p className="mb-4 text-xs leading-5 text-ink-muted">
+            پس از لغو، صندلی برای رزرو سایر کاربران آزاد می‌شود.
+          </p>
           {cancelModal && (
             <div className="bg-danger-soft rounded-xl p-4 text-sm text-left space-y-1 mb-6">
               <p className="font-bold text-ink-strong">{cancelModal.event_title}</p>

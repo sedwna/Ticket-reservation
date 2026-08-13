@@ -30,29 +30,55 @@ export default function SeatMapPage() {
   const [successModal, setSuccessModal] = useState(false);
   const [successData, setSuccessData] = useState(null);
 
-  const fetchSeatMap = useCallback(async () => {
+  const fetchSeatMap = useCallback(async ({ silent = false } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const r = await eventService.getSeatMap(eventId);
       if (r.success) {
         setSeatMap(r.data);
-      } else if (defaultData.seatMaps[eventId]) {
+        setSelectedSeat((currentSeat) => {
+          if (!currentSeat) return null;
+          const latestSeat = Object.values(r.data?.rows || {})
+            .flat()
+            .find((seat) => seat.id === currentSeat.id);
+          return latestSeat?.status === 'AVAILABLE' ? latestSeat : null;
+        });
+      } else if (!silent && defaultData.seatMaps[eventId]) {
         setSeatMap(defaultData.seatMaps[eventId]);
-      } else {
+      } else if (!silent) {
         toast.error(r.message || 'خطا در دریافت نقشه');
       }
     } catch (err) {
-      if (defaultData.seatMaps[eventId]) {
+      if (!silent && defaultData.seatMaps[eventId]) {
         setSeatMap(defaultData.seatMaps[eventId]);
-      } else {
+      } else if (!silent) {
         toast.error(err.response?.data?.message || 'خطا در ارتباط با سرور');
       }
-    } finally { setLoading(false); }
+    } finally {
+      if (!silent) setLoading(false);
+    }
   }, [eventId]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(fetchSeatMap, 0);
     return () => window.clearTimeout(timeoutId);
+  }, [fetchSeatMap]);
+
+  useEffect(() => {
+    const refreshVisibleMap = () => {
+      if (document.visibilityState === 'visible') {
+        fetchSeatMap({ silent: true });
+      }
+    };
+    const intervalId = window.setInterval(refreshVisibleMap, 15000);
+    window.addEventListener('focus', refreshVisibleMap);
+    document.addEventListener('visibilitychange', refreshVisibleMap);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', refreshVisibleMap);
+      document.removeEventListener('visibilitychange', refreshVisibleMap);
+    };
   }, [fetchSeatMap]);
 
   const handleSeatClick = (seat) => {
@@ -69,7 +95,7 @@ export default function SeatMapPage() {
         setSuccessData(r.data);
         setSuccessModal(true);
         setSelectedSeat(null);
-        fetchSeatMap();
+        fetchSeatMap({ silent: true });
       } else {
         toast.error(r.message || 'خطا در رزرو');
       }

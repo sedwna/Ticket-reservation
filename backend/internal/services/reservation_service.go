@@ -35,6 +35,7 @@ func (s *ReservationService) CreateReservation(userID, eventID, seatID uuid.UUID
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
+			panic(r)
 		}
 	}()
 
@@ -165,15 +166,20 @@ func (s *ReservationService) GetReservationHistory(userID uuid.UUID) ([]models.R
 
 func (s *ReservationService) CancelReservation(reservationID, userID uuid.UUID) error {
 	tx := s.db.Begin()
+	if tx.Error != nil {
+		return fmt.Errorf("failed to start cancellation transaction: %w", tx.Error)
+	}
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
+			panic(r)
 		}
 	}()
 
-	// Find the reservation
+	// Lock the reservation so two cancellation requests cannot update it concurrently.
 	var reservation models.Reservation
-	if err := tx.First(&reservation, "id = ?", reservationID).Error; err != nil {
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		First(&reservation, "id = ?", reservationID).Error; err != nil {
 		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.New("رزرو یافت نشد")
@@ -193,6 +199,27 @@ func (s *ReservationService) CancelReservation(reservationID, userID uuid.UUID) 
 		return errors.New("این رزرو قبلاً لغو شده است")
 	}
 
+	// Lock and verify the exact seat belonging to this reservation before releasing it.
+	var seat models.Seat
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("id = ? AND event_id = ?", reservation.SeatID, reservation.EventID).
+		First(&seat).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to lock reserved seat: %w", err)
+	}
+
+	var otherActiveReservations int64
+	if err := tx.Model(&models.Reservation{}).
+		Where("seat_id = ? AND status = ? AND id <> ?", reservation.SeatID, "ACTIVE", reservation.ID).
+		Count(&otherActiveReservations).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to verify seat reservation: %w", err)
+	}
+	if otherActiveReservations > 0 {
+		tx.Rollback()
+		return errors.New("این صندلی به رزرو فعال دیگری متصل است")
+	}
+
 	// Mark reservation as cancelled
 	now := time.Now()
 	if err := tx.Model(&reservation).Updates(map[string]interface{}{
@@ -204,13 +231,16 @@ func (s *ReservationService) CancelReservation(reservationID, userID uuid.UUID) 
 	}
 
 	// Free up the seat
-	if err := tx.Model(&models.Seat{}).Where("id = ?", reservation.SeatID).
-		Update("status", "AVAILABLE").Error; err != nil {
+	if err := tx.Model(&seat).Update("status", "AVAILABLE").Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to free seat: %w", err)
 	}
 
-	return tx.Commit().Error
+	if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("failed to commit cancellation: %w", err)
+	}
+
+	return nil
 }
 
 func (s *ReservationService) GetAllReservations(filters map[string]interface{}) ([]models.ReservationResponse, error) {

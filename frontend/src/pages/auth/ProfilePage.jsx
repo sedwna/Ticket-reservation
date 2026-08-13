@@ -85,7 +85,7 @@ export default function ProfilePage() {
           onClick={() => navigate(-1)}
           variant="ghost"
           size="sm"
-          className="inline-flex items-center gap-2 text-ink-faint hover:text-ink mb-6"
+          className="mb-6 inline-flex items-center gap-2 rounded-2xl border border-line-strong bg-surface-card/90 text-ink shadow-sm transition hover:bg-surface-muted"
         >
           <ArrowRightIcon className="w-4 h-4" /> بازگشت
         </Button>
