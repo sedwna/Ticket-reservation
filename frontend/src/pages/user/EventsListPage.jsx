@@ -10,6 +10,21 @@ import Button from '../../components/common/Button';
 import EmptyState from '../../components/common/EmptyState';
 import { CardSkeleton } from '../../components/common/LoadingSkeleton';
 
+const EVENT_STATUS_ORDER = {
+  ACTIVE: 0,
+  CLOSED: 1,
+  COMPLETED: 2,
+  CANCELLED: 3,
+};
+
+const getEventActionLabel = (event) => {
+  if (event.status === 'CANCELLED') return 'رویداد لغو شده';
+  if (event.status === 'COMPLETED') return 'رویداد برگزار شده';
+  if (event.status === 'CLOSED') return 'ثبت‌نام پایان یافته';
+  if (event.available_count <= 0) return 'ظرفیت تکمیل است';
+  return 'مشاهده و رزرو';
+};
+
 export default function EventsListPage() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +35,7 @@ export default function EventsListPage() {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const r = await eventService.getActiveEvents();
+      const r = await eventService.getEvents();
       if (r.success) {
         setEvents(r.data || defaultData.events);
       } else {
@@ -36,11 +51,17 @@ export default function EventsListPage() {
     return () => window.clearTimeout(timeoutId);
   }, []);
 
-  const filtered = events.filter(e => {
-    if (search && !e.title.includes(search)) return false;
-    if (statusFilter && e.status !== statusFilter) return false;
-    return true;
-  });
+  const normalizedSearch = search.trim().toLocaleLowerCase('fa');
+  const filtered = events
+    .filter((event) => {
+      if (normalizedSearch && !event.title.toLocaleLowerCase('fa').includes(normalizedSearch)) return false;
+      if (statusFilter && event.status !== statusFilter) return false;
+      return true;
+    })
+    .sort((first, second) => (
+      (EVENT_STATUS_ORDER[first.status] ?? 99) - (EVENT_STATUS_ORDER[second.status] ?? 99)
+      || String(second.event_date).localeCompare(String(first.event_date))
+    ));
 
   const occupancyColor = (rate) =>
     rate >= 90 ? 'bg-red-400' : rate >= 70 ? 'bg-amber-400' : 'bg-emerald-400';
@@ -52,8 +73,8 @@ export default function EventsListPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h2 className="text-3xl font-extrabold text-ink-strong">رویدادهای فعال</h2>
-            <p className="text-ink-muted mt-1">رویدادهای در حال برگزاری را مشاهده و صندلی رزرو کنید</p>
+            <h2 className="text-3xl font-extrabold text-ink-strong">رویدادها</h2>
+            <p className="text-ink-muted mt-1">همه رویدادها را ببینید و برای رویدادهای فعال صندلی رزرو کنید</p>
           </div>
         </div>
 
@@ -87,8 +108,10 @@ export default function EventsListPage() {
         {!loading && filtered.length === 0 && (
           <EmptyState
             icon={CalendarDaysIcon}
-            title="رویداد فعالی یافت نشد"
-            description="در حال حاضر رویداد فعالی وجود ندارد. لطفاً بعداً مراجعه کنید."
+            title={(search || statusFilter) ? 'رویدادی با این فیلتر یافت نشد' : 'رویدادی یافت نشد'}
+            description={(search || statusFilter)
+              ? 'عبارت جستجو یا وضعیت انتخاب‌شده را تغییر دهید.'
+              : 'در حال حاضر رویدادی برای نمایش وجود ندارد.'}
           />
         )}
 
@@ -96,11 +119,14 @@ export default function EventsListPage() {
         {!loading && filtered.length > 0 && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((event) => (
-              <div key={event.id} className="card-interactive group p-0 overflow-hidden">
+              <div
+                key={event.id}
+                className={`${event.status === 'ACTIVE' ? 'card-interactive' : 'card'} group overflow-hidden p-0`}
+              >
                 {/* Poster */}
                 {event.poster_url ? (
                   <div className="relative h-36 bg-surface-muted overflow-hidden">
-                    <img src={event.poster_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={event.poster_url} alt={`پوستر ${event.title}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                     <div className="absolute top-3 right-3"><Badge status={event.status} /></div>
                   </div>
@@ -165,10 +191,7 @@ export default function EventsListPage() {
                   fullWidth
                   className="!rounded-xl"
                 >
-                  {event.available_count <= 0 ? 'ظرفیت تکمیل است' :
-                   event.status === 'CLOSED' ? 'پایان ثبت‌نام' :
-                   event.status === 'CANCELLED' ? 'لغو شده' :
-                   event.status !== 'ACTIVE' ? 'برگزار شده' : 'مشاهده و رزرو'}
+                  {getEventActionLabel(event)}
                 </Button>
                 </div>
               </div>

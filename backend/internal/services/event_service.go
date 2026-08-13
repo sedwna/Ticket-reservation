@@ -32,8 +32,8 @@ func NewEventService(db *gorm.DB, eventRepo *repository.EventRepository, seatRep
 	}
 }
 
-func (s *EventService) GetActiveEvents() ([]models.EventListResponse, error) {
-	events, err := s.eventRepo.FindAllActive()
+func (s *EventService) GetEvents() ([]models.EventListResponse, error) {
+	events, err := s.eventRepo.FindAll(map[string]interface{}{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch events: %w", err)
 	}

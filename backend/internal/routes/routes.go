@@ -66,7 +66,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 			protected.PUT("/auth/profile", authHandler.UpdateProfile)
 
 			// Events (authenticated users)
-			protected.GET("/events", eventHandler.GetActiveEvents)
+			protected.GET("/events", eventHandler.GetEvents)
 			protected.GET("/events/:id", eventHandler.GetEventByID)
 			protected.GET("/events/:id/seats", eventHandler.GetSeatMap)
 

@@ -1,7 +1,7 @@
 import api from './api';
 
 const eventService = {
-  getActiveEvents: async () => {
+  getEvents: async () => {
     const response = await api.get('/events');
     return response.data;
   },

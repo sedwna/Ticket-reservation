@@ -19,15 +19,15 @@ func NewEventHandler(eventService *services.EventService) *EventHandler {
 	return &EventHandler{eventService: eventService}
 }
 
-// GetActiveEvents godoc
-// @Summary Get list of active events
+// GetEvents godoc
+// @Summary Get list of events visible to authenticated users
 // @Tags events
 // @Produce json
 // @Success 200 {object} utils.APIResponse
 // @Security BearerAuth
 // @Router /api/v1/events [get]
-func (h *EventHandler) GetActiveEvents(c *gin.Context) {
-	events, err := h.eventService.GetActiveEvents()
+func (h *EventHandler) GetEvents(c *gin.Context) {
+	events, err := h.eventService.GetEvents()
 	if err != nil {
 		utils.InternalError(c, "خطا در دریافت لیست رویدادها")
 		return
