@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import {
   ArrowDownTrayIcon, MagnifyingGlassIcon, FunnelIcon,
-  CalendarDaysIcon, ChartBarIcon, CheckCircleIcon, TicketIcon, XMarkIcon,
+  CalendarDaysIcon, ChartBarIcon, CheckCircleIcon, LightBulbIcon, TicketIcon, XMarkIcon,
 } from '@heroicons/react/24/outline';
 import {
   PieChart, Pie, Cell, LineChart, Line,
@@ -182,22 +182,50 @@ export default function ReportsPage() {
   }, {}));
 
   const barData = hasActiveFilters
-    ? filteredEventData
-    : (globalOccupancy ? globalOccupancy.labels.map((l, i) => ({
-        name: l,
-        value: globalOccupancy.data[i] || 0,
-      })) : []);
+    ? filteredEventData.map((item) => {
+        const event = events.find((candidate) => candidate.title === item.name);
+        return {
+          ...item,
+          capacity: event?.total_capacity || 0,
+        };
+      })
+    : events.map((event) => {
+        const reservedCount = Number(event.reserved_count) || 0;
+        const capacity = Number(event.total_capacity) || 0;
+        const availableCount = Number.isFinite(Number(event.available_count))
+          ? Math.max(Number(event.available_count), 0)
+          : Math.max(capacity - reservedCount, 0);
+        const occupancyRate = Number.isFinite(Number(event.occupancy_rate))
+          ? Math.min(Math.max(Number(event.occupancy_rate), 0), 100)
+          : (capacity > 0 ? Math.min((reservedCount / capacity) * 100, 100) : 0);
+
+        return {
+          name: event.title,
+          value: reservedCount,
+          capacity,
+          availableCount,
+          occupancyRate,
+        };
+      });
 
   const eventColorByName = new Map(
     barData.map((item, index) => [item.name, PIE_COLORS[index % PIE_COLORS.length]]),
   );
   const sortedBarData = [...barData]
     .sort((first, second) => (
-      second.value - first.value || first.name.localeCompare(second.name, 'fa')
+      (hasActiveFilters ? second.value - first.value : second.occupancyRate - first.occupancyRate)
+      || second.value - first.value
+      || first.name.localeCompare(second.name, 'fa')
     ))
     .map((item) => ({ ...item, color: eventColorByName.get(item.name) }));
   const totalBarReservations = sortedBarData.reduce((total, item) => total + item.value, 0);
   const maxBarValue = Math.max(...sortedBarData.map(item => item.value), 0);
+  const totalEventCapacity = sortedBarData.reduce((total, item) => total + (item.capacity || 0), 0);
+  const totalAvailableSeats = sortedBarData.reduce((total, item) => total + (item.availableCount || 0), 0);
+  const overallOccupancyRate = totalEventCapacity > 0
+    ? Math.min((totalBarReservations / totalEventCapacity) * 100, 100)
+    : 0;
+  const leadingEvent = sortedBarData[0];
 
   const pieData = hasActiveFilters
     ? filteredStatusData
@@ -340,10 +368,12 @@ export default function ReportsPage() {
                     </div>
                     <div className="min-w-0">
                       <h3 className="text-lg font-bold text-ink-strong">
-                        {hasActiveFilters ? 'رزروهای منطبق به تفکیک رویداد' : 'مقایسه رزروها به تفکیک رویداد'}
+                        {hasActiveFilters ? 'رزروهای منطبق به تفکیک رویداد' : 'تحلیل نرخ پرشدگی رویدادها'}
                       </h3>
                       <p className="mt-1 text-xs leading-5 text-ink-muted">
-                        مرتب‌شده بر اساس تعداد؛ رنگ هر رویداد با نمودار سمت چپ یکسان است.
+                        {hasActiveFilters
+                          ? 'مرتب‌شده بر اساس تعداد رزروهای منطبق با فیلتر؛ رنگ‌ها با نمودار سمت چپ یکسان‌اند.'
+                          : 'مقایسه تعداد رزرو با ظرفیت واقعی؛ رویدادهای پُرتر در ابتدای فهرست قرار دارند.'}
                       </p>
                     </div>
                   </div>
@@ -359,10 +389,47 @@ export default function ReportsPage() {
                   )}
                 </div>
 
+                {!hasActiveFilters && sortedBarData.length > 0 && (
+                  <>
+                    <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      <div className="rounded-xl border border-line bg-surface-alt px-3 py-2.5">
+                        <p className="text-[10px] font-medium text-ink-faint">پرشدگی کل</p>
+                        <p className="mt-1 text-base font-extrabold text-ink-strong tabular-nums" dir="ltr">
+                          {overallOccupancyRate.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-line bg-surface-alt px-3 py-2.5">
+                        <p className="text-[10px] font-medium text-ink-faint">صندلی باقی‌مانده</p>
+                        <p className="mt-1 text-base font-extrabold text-ink-strong tabular-nums">
+                          {totalAvailableSeats.toLocaleString('fa-IR')}
+                        </p>
+                      </div>
+                      <div className="col-span-2 rounded-xl border border-line bg-surface-alt px-3 py-2.5 sm:col-span-1">
+                        <p className="text-[10px] font-medium text-ink-faint">بیشترین تقاضا</p>
+                        <p className="mt-1 truncate text-sm font-bold text-ink-strong" title={leadingEvent.name}>
+                          {leadingEvent.name}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-brand-border bg-brand-soft px-3.5 py-3">
+                      <LightBulbIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-accent" />
+                      <p className="text-xs leading-5 text-brand-ink">
+                        <strong>{leadingEvent.name}</strong> با نرخ پرشدگی{' '}
+                        <strong>{leadingEvent.occupancyRate.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪</strong>{' '}
+                        بیشترین تقاضا را دارد؛ در مجموع{' '}
+                        <strong>{totalAvailableSeats.toLocaleString('fa-IR')} صندلی</strong> هنوز خالی است.
+                      </p>
+                    </div>
+                  </>
+                )}
+
                 {sortedBarData.length > 0 ? (
-                  <div className="space-y-2" role="list" aria-label="مقایسه تعداد رزرو رویدادها">
+                  <div className="space-y-2" role="list" aria-label={hasActiveFilters ? 'مقایسه تعداد رزرو رویدادها' : 'مقایسه نرخ پرشدگی رویدادها'}>
                     {sortedBarData.map((entry, index) => {
-                      const relativeWidth = maxBarValue > 0 ? (entry.value / maxBarValue) * 100 : 0;
+                      const relativeWidth = hasActiveFilters
+                        ? (maxBarValue > 0 ? (entry.value / maxBarValue) * 100 : 0)
+                        : entry.occupancyRate;
                       const share = totalBarReservations > 0 ? (entry.value / totalBarReservations) * 100 : 0;
 
                       return (
@@ -384,18 +451,35 @@ export default function ReportsPage() {
                               {entry.name}
                             </span>
                             <span className="shrink-0 rounded-lg bg-surface-muted px-2 py-1 text-xs font-bold text-ink-strong tabular-nums">
-                              {entry.value.toLocaleString('fa-IR')} رزرو
+                              {hasActiveFilters
+                                ? `${entry.value.toLocaleString('fa-IR')} رزرو`
+                                : `${entry.occupancyRate.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪`}
                             </span>
                           </div>
+
+                          {!hasActiveFilters && (
+                            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 pr-[3.25rem] text-[11px] text-ink-faint">
+                              <span>
+                                <strong className="text-ink">{entry.value.toLocaleString('fa-IR')}</strong> رزرو از{' '}
+                                <strong className="text-ink">{entry.capacity.toLocaleString('fa-IR')}</strong> صندلی
+                              </span>
+                              <span aria-hidden="true">•</span>
+                              <span>
+                                <strong className="text-ink">{entry.availableCount.toLocaleString('fa-IR')}</strong> صندلی خالی
+                              </span>
+                            </div>
+                          )}
 
                           <div className="mt-2 flex items-center gap-3 pr-[3.25rem]">
                             <div
                               className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface-muted"
                               role="progressbar"
-                              aria-label={`${entry.name}: ${entry.value} رزرو`}
+                              aria-label={hasActiveFilters
+                                ? `${entry.name}: ${entry.value} رزرو منطبق`
+                                : `${entry.name}: ${entry.occupancyRate.toFixed(1)} درصد پرشدگی`}
                               aria-valuemin={0}
-                              aria-valuemax={maxBarValue}
-                              aria-valuenow={entry.value}
+                              aria-valuemax={hasActiveFilters ? maxBarValue : 100}
+                              aria-valuenow={hasActiveFilters ? entry.value : entry.occupancyRate}
                             >
                               <div
                                 className="ml-auto h-full rounded-full transition-[width,filter] duration-700 ease-out group-hover:brightness-110"
@@ -407,7 +491,9 @@ export default function ReportsPage() {
                               />
                             </div>
                             <span className="w-12 shrink-0 text-left text-[11px] font-medium text-ink-faint tabular-nums" dir="ltr">
-                              {share.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪
+                              {hasActiveFilters
+                                ? `${share.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪`
+                                : `${entry.availableCount.toLocaleString('fa-IR')} خالی`}
                             </span>
                           </div>
                         </div>
