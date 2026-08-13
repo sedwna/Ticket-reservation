@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import Button from '../../components/common/Button';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { getEmailValidationError, normalizeEmail } from '../../utils/email';
+import { getStudentIDValidationError, normalizeStudentID } from '../../utils/studentId';
 
 const strengthLabels = ['', 'ضعیف', 'متوسط', 'خوب', 'عالی'];
 const strengthColors = ['bg-surface-raised', 'bg-red-400', 'bg-amber-400', 'bg-emerald-400', 'bg-emerald-500'];
@@ -16,6 +17,7 @@ export default function RegisterPage() {
   });
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [studentIDError, setStudentIDError] = useState('');
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
@@ -24,7 +26,9 @@ export default function RegisterPage() {
   const validate = () => {
     if (!form.first_name.trim()) return 'نام الزامی است';
     if (!form.last_name.trim()) return 'نام خانوادگی الزامی است';
-    if (!form.student_id.trim()) return 'شماره دانشجویی الزامی است';
+    const currentStudentIDError = getStudentIDValidationError(form.student_id);
+    setStudentIDError(currentStudentIDError);
+    if (currentStudentIDError) return currentStudentIDError;
     const currentEmailError = getEmailValidationError(form.email);
     setEmailError(currentEmailError);
     if (currentEmailError) return currentEmailError;
@@ -50,7 +54,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const response = await authService.register({
-        student_id: form.student_id, first_name: form.first_name,
+        student_id: normalizeStudentID(form.student_id), first_name: form.first_name,
         last_name: form.last_name, email: normalizeEmail(form.email), password: form.password,
       });
       if (response.success) {
@@ -62,6 +66,7 @@ export default function RegisterPage() {
     } catch (err) {
       const message = err.response?.data?.message || 'خطا در ارتباط با سرور';
       if (message.includes('ایمیل') || message.includes('دامنه')) setEmailError(message);
+      if (message.includes('شماره دانشجویی')) setStudentIDError(message);
       toast.error(message);
     } finally {
       setLoading(false);
@@ -109,8 +114,22 @@ export default function RegisterPage() {
             <div>
               <label className="block text-sm font-medium text-ink mb-1">شماره دانشجویی *</label>
               <input type="text" value={form.student_id}
-                onChange={(e) => setForm({...form, student_id: e.target.value})}
-                className="input-field ltr text-left" dir="ltr" placeholder="4012345" />
+                onChange={(e) => {
+                  setForm({...form, student_id: normalizeStudentID(e.target.value)});
+                  setStudentIDError('');
+                }}
+                onBlur={() => setStudentIDError(getStudentIDValidationError(form.student_id))}
+                className={`input-field ltr text-left ${studentIDError ? 'border-red-300 focus:ring-red-500/30' : ''}`}
+                dir="ltr"
+                placeholder="4012345678"
+                inputMode="numeric"
+                autoComplete="off"
+                maxLength={20}
+                aria-invalid={Boolean(studentIDError)}
+                aria-describedby={studentIDError ? 'register-student-id-error' : undefined}
+              />
+              {studentIDError && <p id="register-student-id-error" className="text-red-500 text-xs mt-1">{studentIDError}</p>}
+              <p className="text-xs text-ink-faint mt-1">فقط عدد و حداقل ۱۰ رقم.</p>
             </div>
 
             <div>
@@ -127,14 +146,14 @@ export default function RegisterPage() {
                 }}
                 className={`input-field ltr text-left ${emailError ? 'border-red-300 focus:ring-red-500/30' : ''}`}
                 dir="ltr"
-                placeholder="example@basu.ac.ir"
+                placeholder="example@gmail.com"
                 autoComplete="email"
                 maxLength={254}
                 aria-invalid={Boolean(emailError)}
                 aria-describedby={emailError ? 'register-email-error' : undefined}
               />
               {emailError && <p id="register-email-error" className="text-red-500 text-xs mt-1">{emailError}</p>}
-              <p className="text-xs text-ink-faint mt-1">اعتبار دامنه ایمیل نیز هنگام ثبت‌نام بررسی می‌شود.</p>
+              <p className="text-xs text-ink-faint mt-1">فقط ایمیل با دامنهٔ gmail.com پذیرفته می‌شود.</p>
             </div>
 
             <div>

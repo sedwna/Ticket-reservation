@@ -22,19 +22,27 @@ type AuthService struct {
 	emailValidator *utils.EmailValidator
 }
 
+const registrationEmailDomain = "gmail.com"
+
 func NewAuthService(userRepo *repository.UserRepository, cfg *config.Config) *AuthService {
 	return &AuthService{
 		userRepo: userRepo,
 		config:   cfg,
 		emailValidator: utils.NewEmailValidator(
 			cfg.EmailDomainCheck,
-			cfg.EmailAllowedDomains,
+			[]string{registrationEmailDomain},
 			time.Duration(cfg.EmailDNSTimeoutSeconds)*time.Second,
 		),
 	}
 }
 
 func (s *AuthService) Register(ctx context.Context, req *models.RegisterRequest) (*models.UserResponse, error) {
+	studentID, err := utils.NormalizeAndValidateStudentID(req.StudentID)
+	if err != nil {
+		return nil, err
+	}
+	req.StudentID = studentID
+
 	normalizedEmail, err := s.emailValidator.Validate(ctx, req.Email)
 	if err != nil {
 		return nil, err

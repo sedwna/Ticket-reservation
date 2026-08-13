@@ -43,12 +43,17 @@ func TestNormalizeAndValidateEmail(t *testing.T) {
 }
 
 func TestEmailValidatorAllowedDomains(t *testing.T) {
-	validator := NewEmailValidator(false, []string{"basu.ac.ir"}, time.Second)
+	validator := NewEmailValidator(false, []string{"gmail.com"}, time.Second)
 
-	if _, err := validator.Validate(context.Background(), "user@student.basu.ac.ir"); err != nil {
-		t.Fatalf("expected BASU subdomain to be allowed: %v", err)
+	if email, err := validator.Validate(context.Background(), " User.Name+tag@GMAIL.COM "); err != nil {
+		t.Fatalf("expected gmail.com to be allowed: %v", err)
+	} else if email != "user.name+tag@gmail.com" {
+		t.Fatalf("unexpected normalized email: %q", email)
 	}
 	if _, err := validator.Validate(context.Background(), "user@example.com"); err == nil {
 		t.Fatal("expected an unlisted domain to be rejected")
+	}
+	if _, err := validator.Validate(context.Background(), "user@mail.gmail.com"); err == nil {
+		t.Fatal("expected a gmail.com subdomain to be rejected")
 	}
 }

@@ -1,5 +1,6 @@
 const localPartPattern = /^[a-z0-9.!#$%&'*+/=?^_{|}~-]+$/;
 const domainLabelPattern = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
+const registrationEmailDomain = 'gmail.com';
 
 export const normalizeEmail = (value = '') => value.trim().toLocaleLowerCase('en-US');
 
@@ -31,6 +32,10 @@ export const getEmailValidationError = (value) => {
     || labels.some((label) => !domainLabelPattern.test(label))
   ) {
     return 'دامنه ایمیل معتبر نیست';
+  }
+
+  if (domain !== registrationEmailDomain) {
+    return 'ایمیل باید با @gmail.com باشد';
   }
 
   return '';

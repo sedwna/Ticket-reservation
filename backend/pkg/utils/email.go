@@ -59,7 +59,7 @@ func (v *EmailValidator) Validate(ctx context.Context, rawEmail string) (string,
 	}
 
 	if !v.isAllowedDomain(domain) {
-		return "", errors.New("دامنه این ایمیل برای ثبت‌نام مجاز نیست")
+		return "", errors.New("ایمیل باید با @gmail.com باشد")
 	}
 	if !v.checkDomain {
 		return email, nil
@@ -142,7 +142,7 @@ func (v *EmailValidator) isAllowedDomain(domain string) bool {
 		return true
 	}
 	for _, allowedDomain := range v.allowedDomains {
-		if domain == allowedDomain || strings.HasSuffix(domain, "."+allowedDomain) {
+		if domain == allowedDomain {
 			return true
 		}
 	}

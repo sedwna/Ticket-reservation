@@ -3,7 +3,6 @@ package config
 import (
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -19,7 +18,6 @@ type Config struct {
 	JWTSecret              string
 	JWTExpiry              int // hours
 	EmailDomainCheck       bool
-	EmailAllowedDomains    []string
 	EmailDNSTimeoutSeconds int
 }
 
@@ -48,7 +46,6 @@ func LoadConfig() (*Config, error) {
 		domainCheck = true
 	}
 	cfg.EmailDomainCheck = domainCheck
-	cfg.EmailAllowedDomains = parseCSV(getEnv("EMAIL_ALLOWED_DOMAINS", ""))
 
 	dnsTimeout, err := strconv.Atoi(getEnv("EMAIL_DNS_TIMEOUT_SECONDS", "4"))
 	if err != nil || dnsTimeout < 1 {
@@ -57,17 +54,6 @@ func LoadConfig() (*Config, error) {
 	cfg.EmailDNSTimeoutSeconds = dnsTimeout
 
 	return cfg, nil
-}
-
-func parseCSV(value string) []string {
-	items := make([]string, 0)
-	for _, item := range strings.Split(value, ",") {
-		item = strings.ToLower(strings.TrimSpace(item))
-		if item != "" {
-			items = append(items, item)
-		}
-	}
-	return items
 }
 
 func (c *Config) DSN() string {
