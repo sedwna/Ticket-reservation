@@ -27,10 +27,10 @@ const PIE_COLORS = [
   '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16',
 ];
 const EMPTY_FILTERS = { event_id: '', date_from: '', date_to: '' };
-const STATUS_LABELS = {
-  ACTIVE: 'فعال',
-  CANCELLED: 'لغوشده',
-  COMPLETED: 'تکمیل‌شده',
+const RESERVATION_STATUS_META = {
+  ACTIVE: { label: 'فعال', color: '#10b981', order: 0 },
+  CANCELLED: { label: 'لغوشده', color: '#ef4444', order: 1 },
+  COMPLETED: { label: 'تکمیل‌شده', color: '#3b82f6', order: 2 },
 };
 
 const formatFilterDate = (value) => {
@@ -56,7 +56,6 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [filteredReservations, setFilteredReservations] = useState([]);
   const [eventReport, setEventReport] = useState(null);
-  const [globalOccupancy, setGlobalOccupancy] = useState(null);
   const [trend, setTrend] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -65,15 +64,12 @@ export default function ReportsPage() {
     const init = async () => {
       try {
         setLoading(true);
-        const [evts, occ, stats] = await Promise.all([
+        const [evts, stats] = await Promise.all([
           eventService.getActiveEvents(),
-          reservationService.getOccupancyData(),
           reservationService.getStats(),
         ]);
         if (evts.success) setEvents(evts.data || []);
         else setEvents(defaultData.events);
-        if (occ.success) setGlobalOccupancy(occ.data);
-        else setGlobalOccupancy(defaultData.occupancyData);
         if (stats.success) setTrend(stats.data?.reservation_trend || []);
         else setTrend(defaultData.stats.reservation_trend);
 
@@ -88,7 +84,6 @@ export default function ReportsPage() {
       } catch {
         const fallbackReservations = [...defaultData.reservations.active, ...defaultData.reservations.history];
         setEvents(defaultData.events);
-        setGlobalOccupancy(defaultData.occupancyData);
         setTrend(defaultData.stats.reservation_trend);
         setFilteredReservations(fallbackReservations);
       } finally { setLoading(false); }
@@ -175,11 +170,22 @@ export default function ReportsPage() {
   }, {}));
 
   const filteredStatusData = Object.values(filteredReservations.reduce((result, reservation) => {
-    const name = STATUS_LABELS[reservation.status] || reservation.status || 'نامشخص';
-    result[name] = result[name] || { name, value: 0 };
-    result[name].value += 1;
+    const status = reservation.status || 'UNKNOWN';
+    const meta = RESERVATION_STATUS_META[status] || {
+      label: status === 'UNKNOWN' ? 'نامشخص' : status,
+      color: '#94a3b8',
+      order: 99,
+    };
+    result[status] = result[status] || {
+      status,
+      name: meta.label,
+      color: meta.color,
+      order: meta.order,
+      value: 0,
+    };
+    result[status].value += 1;
     return result;
-  }, {}));
+  }, {})).sort((first, second) => first.order - second.order);
 
   const barData = hasActiveFilters
     ? filteredEventData.map((item) => {
@@ -227,12 +233,14 @@ export default function ReportsPage() {
     : 0;
   const leadingEvent = sortedBarData[0];
 
-  const pieData = hasActiveFilters
-    ? filteredStatusData
-    : (globalOccupancy ? globalOccupancy.labels.map((l, i) => ({
-        name: l,
-        value: globalOccupancy.data[i] || 0,
-      })) : []);
+  const pieData = filteredStatusData;
+  const totalStatusReservations = pieData.reduce((total, item) => total + item.value, 0);
+  const activeReservationCount = pieData.find((item) => item.status === 'ACTIVE')?.value || 0;
+  const cancelledReservationCount = pieData.find((item) => item.status === 'CANCELLED')?.value || 0;
+  const completedReservationCount = pieData.find((item) => item.status === 'COMPLETED')?.value || 0;
+  const cancellationRate = totalStatusReservations > 0
+    ? (cancelledReservationCount / totalStatusReservations) * 100
+    : 0;
 
   return (
     <div className="page-shell">
@@ -506,67 +514,115 @@ export default function ReportsPage() {
               </div>
 
               {/* Donut Chart + Legend */}
-              <div className="card p-6">
-                <h3 className="text-lg font-bold text-ink-strong mb-4">
-                  {hasActiveFilters ? 'وضعیت رزروهای منطبق' : 'توزیع رزروها'}
-                </h3>
+              <div className="card self-start p-6">
+                <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h3 className="text-lg font-bold text-ink-strong">
+                      {hasActiveFilters ? 'وضعیت رزروهای منطبق' : 'وضعیت کل رزروها'}
+                    </h3>
+                    <p className="mt-1 text-xs leading-5 text-ink-muted">
+                      ترکیب رزروهای فعال، لغوشده و تکمیل‌شده در نتایج فعلی
+                    </p>
+                  </div>
+                  {totalStatusReservations > 0 && (
+                    <div className="flex shrink-0 flex-wrap gap-2 text-xs">
+                      <span className="rounded-full border border-line-strong bg-surface-alt px-2.5 py-1 font-bold text-ink-strong">
+                        {totalStatusReservations.toLocaleString('fa-IR')} رزرو
+                      </span>
+                      <span className="rounded-full border border-danger-border bg-danger-soft px-2.5 py-1 font-bold text-danger-ink">
+                        {cancellationRate.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪ نرخ لغو
+                      </span>
+                    </div>
+                  )}
+                </div>
                 {pieData.length > 0 ? (
-                  <div className="flex flex-col lg:flex-row items-center gap-6">
-                    {/* Donut */}
-                    <div className="flex-shrink-0" style={{ width: 180, height: 180 }}>
-                      <PieChart width={180} height={180}>
+                  <>
+                    <div className="flex flex-col items-center gap-6 lg:flex-row">
+                      {/* Donut */}
+                      <div className="flex-shrink-0" style={{ width: 190, height: 190 }}>
+                        <PieChart width={190} height={190}>
                           <Pie
                             data={pieData}
                             cx="50%" cy="50%"
-                            innerRadius={50}
-                            outerRadius={85}
+                            innerRadius={56}
+                            outerRadius={88}
                             paddingAngle={3}
                             dataKey="value"
                             stroke="none"
                           >
-                            {pieData.map((_, i) => (
-                              <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                            {pieData.map((entry) => (
+                              <Cell key={entry.status} fill={entry.color} />
                             ))}
                           </Pie>
                           <Tooltip
-                            formatter={(value, name) => [value, name]}
+                            formatter={(value, name, item) => [
+                              `${Number(value).toLocaleString('fa-IR')} رزرو`,
+                              item.payload?.name || name,
+                            ]}
                             contentStyle={chartTooltipStyle}
                             labelStyle={chartTooltipLabelStyle}
                           />
+                          <text x="50%" y="46%" textAnchor="middle" dominantBaseline="central" className="fill-ink-strong text-2xl font-extrabold">
+                            {totalStatusReservations.toLocaleString('fa-IR')}
+                          </text>
+                          <text x="50%" y="59%" textAnchor="middle" dominantBaseline="central" className="fill-ink-faint text-[10px] font-medium">
+                            کل رزروها
+                          </text>
                         </PieChart>
+                      </div>
+
+                      {/* Legend */}
+                      <div className="w-full min-w-0 flex-1 space-y-2">
+                        {pieData.map((entry) => {
+                          const percentage = totalStatusReservations > 0
+                            ? (entry.value / totalStatusReservations) * 100
+                            : 0;
+                          return (
+                            <div key={entry.status} className="flex items-center gap-3 rounded-xl border border-transparent px-3 py-3 transition-colors hover:border-line hover:bg-surface-alt">
+                              <div
+                                className="h-3.5 w-3.5 flex-shrink-0 rounded-md shadow-sm"
+                                style={{ backgroundColor: entry.color }}
+                              />
+                              <span className="min-w-0 flex-1 text-sm font-medium text-ink">
+                                {entry.name}
+                              </span>
+                              <div className="ml-auto flex flex-shrink-0 items-center gap-2 text-sm">
+                                <span className="font-bold text-ink-strong tabular-nums">
+                                  {entry.value.toLocaleString('fa-IR')}
+                                </span>
+                                <span className="w-14 text-left text-xs font-medium text-ink-faint tabular-nums" dir="ltr">
+                                  {percentage.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
 
-                    {/* Legend */}
-                    <div className="flex-1 min-w-0 space-y-2 w-full">
-                      {pieData.map((entry, i) => {
-                        const total = pieData.reduce((s, d) => s + d.value, 0);
-                        const pct = total > 0 ? ((entry.value / total) * 100).toFixed(1) : '0';
-                        const color = PIE_COLORS[i % PIE_COLORS.length];
-                        return (
-                          <div key={i} className="flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-surface-alt transition-colors">
-                            {/* Color swatch */}
-                            <div
-                              className="w-3.5 h-3.5 rounded-md flex-shrink-0"
-                              style={{ backgroundColor: color }}
-                            />
-                            {/* Label — allow full text wrapping */}
-                            <span className="flex-1 text-sm font-medium text-ink leading-relaxed min-w-0">
-                              {entry.name}
-                            </span>
-                            {/* Count + percentage */}
-                            <div className="flex items-center gap-2 flex-shrink-0 text-sm ml-auto">
-                              <span className="font-bold text-ink-strong stat-counter tabular-nums">
-                                {entry.value}
-                              </span>
-                              <span className="text-xs text-ink-faint font-medium tabular-nums w-12 text-left ltr" dir="ltr">
-                                {pct}%
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
+                    <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-brand-border bg-brand-soft px-3.5 py-3">
+                      <LightBulbIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-accent" />
+                      <p className="text-xs leading-5 text-brand-ink">
+                        {cancelledReservationCount > 0 ? (
+                          <>
+                            از مجموع <strong>{totalStatusReservations.toLocaleString('fa-IR')} رزرو</strong>،{' '}
+                            <strong>{cancelledReservationCount.toLocaleString('fa-IR')} رزرو</strong> لغو شده و{' '}
+                            <strong>{activeReservationCount.toLocaleString('fa-IR')} رزرو</strong> همچنان فعال است
+                            {completedReservationCount > 0 && (
+                              <>؛ <strong>{completedReservationCount.toLocaleString('fa-IR')} رزرو</strong> نیز تکمیل شده است</>
+                            )}.
+                          </>
+                        ) : (
+                          <>
+                            در نتایج فعلی رزرو لغوشده‌ای وجود ندارد و <strong>{activeReservationCount.toLocaleString('fa-IR')} رزرو</strong> فعال است
+                            {completedReservationCount > 0 && (
+                              <>؛ <strong>{completedReservationCount.toLocaleString('fa-IR')} رزرو</strong> نیز تکمیل شده است</>
+                            )}.
+                          </>
+                        )}
+                      </p>
                     </div>
-                  </div>
+                  </>
                 ) : (
                   <p className="text-ink-faint text-center py-24">داده‌ای برای نمایش وجود ندارد</p>
                 )}
