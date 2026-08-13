@@ -84,7 +84,9 @@ func (r *ReservationRepository) FindAll(filters map[string]interface{}) ([]model
 	var reservations []models.Reservation
 	query := r.db.Preload("User").Preload("Event").Preload("Seat")
 
-	if eventID, ok := filters["event_id"]; ok && eventID != "" {
+	if eventIDs, ok := filters["event_ids"].([]uuid.UUID); ok && len(eventIDs) > 0 {
+		query = query.Where("event_id IN ?", eventIDs)
+	} else if eventID, ok := filters["event_id"]; ok && eventID != "" {
 		query = query.Where("event_id = ?", eventID)
 	}
 	if dateFrom, ok := filters["date_from"]; ok && dateFrom != "" {

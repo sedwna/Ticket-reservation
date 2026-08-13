@@ -98,6 +98,7 @@ func (h *ReportHandler) GetOccupancyReport(c *gin.Context) {
 // @Tags reports
 // @Produce text/csv
 // @Param event_id query string false "Event ID filter"
+// @Param event_ids query string false "Comma-separated event IDs filter"
 // @Param date_from query string false "Start date filter"
 // @Param date_to query string false "End date filter"
 // @Success 200 {file} text/csv
@@ -106,7 +107,14 @@ func (h *ReportHandler) GetOccupancyReport(c *gin.Context) {
 func (h *ReportHandler) ExportCSV(c *gin.Context) {
 	filters := make(map[string]interface{})
 
-	if eventID := c.Query("event_id"); eventID != "" {
+	if eventIDsValue := c.Query("event_ids"); eventIDsValue != "" {
+		eventIDs, err := parseEventIDs(eventIDsValue)
+		if err != nil || len(eventIDs) == 0 {
+			utils.BadRequest(c, "شناسه یکی از رویدادها نامعتبر است")
+			return
+		}
+		filters["event_ids"] = eventIDs
+	} else if eventID := c.Query("event_id"); eventID != "" {
 		filters["event_id"] = eventID
 	}
 	if dateFrom := c.Query("date_from"); dateFrom != "" {

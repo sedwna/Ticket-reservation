@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import {
   ArrowDownTrayIcon, MagnifyingGlassIcon, FunnelIcon,
-  CalendarDaysIcon, ChartBarIcon, CheckCircleIcon, LightBulbIcon, TicketIcon, XMarkIcon,
+  CalendarDaysIcon, ChartBarIcon, CheckCircleIcon, CheckIcon, ChevronDownIcon,
+  LightBulbIcon, TicketIcon, XMarkIcon,
 } from '@heroicons/react/24/outline';
 import {
   PieChart, Pie, Cell, LineChart, Line,
@@ -26,7 +27,7 @@ const PIE_COLORS = [
   '#10b981', '#ef4444', '#f59e0b', '#3b82f6', '#0ea5e9', '#8b5cf6',
   '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16',
 ];
-const EMPTY_FILTERS = { event_id: '', date_from: '', date_to: '' };
+const createEmptyFilters = () => ({ event_ids: [], date_from: '', date_to: '' });
 const RESERVATION_STATUS_META = {
   ACTIVE: { label: 'فعال', color: '#10b981', order: 0 },
   CANCELLED: { label: 'لغوشده', color: '#ef4444', order: 1 },
@@ -44,13 +45,20 @@ const formatFilterDate = (value) => {
   }).format(date);
 };
 
+const haveSameEventIDs = (first = [], second = []) => (
+  first.length === second.length && first.every((id) => second.includes(id))
+);
+
 export default function ReportsPage() {
   // Filter state
   const [events, setEvents] = useState([]);
-  const [eventFilter, setEventFilter] = useState('');
+  const [eventFilter, setEventFilter] = useState([]);
+  const [eventMenuOpen, setEventMenuOpen] = useState(false);
+  const [eventSearch, setEventSearch] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
+  const [appliedFilters, setAppliedFilters] = useState(createEmptyFilters);
+  const eventMenuRef = useRef(null);
 
   // Data state
   const [loading, setLoading] = useState(true);
@@ -65,7 +73,7 @@ export default function ReportsPage() {
       try {
         setLoading(true);
         const [evts, stats] = await Promise.all([
-          eventService.getActiveEvents(),
+          eventService.getAdminEvents(),
           reservationService.getStats(),
         ]);
         if (evts.success) setEvents(evts.data || []);
@@ -91,10 +99,28 @@ export default function ReportsPage() {
     init();
   }, []);
 
+  useEffect(() => {
+    if (!eventMenuOpen) return undefined;
+
+    const closeOnOutsideClick = (event) => {
+      if (!eventMenuRef.current?.contains(event.target)) setEventMenuOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setEventMenuOpen(false);
+    };
+
+    document.addEventListener('mousedown', closeOnOutsideClick);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [eventMenuOpen]);
+
   // Apply filters — refetch from API or filter locally
   const applyFilters = useCallback(async (filtersOverride) => {
     const nextFilters = filtersOverride || {
-      event_id: eventFilter,
+      event_ids: [...eventFilter],
       date_from: dateFrom,
       date_to: dateTo,
     };
@@ -107,7 +133,7 @@ export default function ReportsPage() {
     setRefreshing(true);
     try {
       const filters = {};
-      if (nextFilters.event_id) filters.event_id = nextFilters.event_id;
+      if (nextFilters.event_ids.length > 0) filters.event_ids = nextFilters.event_ids.join(',');
       if (nextFilters.date_from) filters.date_from = nextFilters.date_from;
       if (nextFilters.date_to) filters.date_to = nextFilters.date_to;
 
@@ -115,12 +141,16 @@ export default function ReportsPage() {
       if (!res.success) throw new Error('Failed to filter reservations');
 
       setFilteredReservations(res.data || []);
-      setAppliedFilters(nextFilters);
+      setAppliedFilters({ ...nextFilters, event_ids: [...nextFilters.event_ids] });
 
-      // If specific event selected, fetch event report
-      if (nextFilters.event_id) {
-        const report = await reservationService.getEventReport(nextFilters.event_id);
-        if (report.success) setEventReport(report.data);
+      // A detailed event report is only meaningful for a single selected event.
+      if (nextFilters.event_ids.length === 1) {
+        try {
+          const report = await reservationService.getEventReport(nextFilters.event_ids[0]);
+          setEventReport(report.success ? report.data : null);
+        } catch {
+          setEventReport(null);
+        }
       } else {
         setEventReport(null);
       }
@@ -131,16 +161,18 @@ export default function ReportsPage() {
   const handleApplyClick = () => applyFilters();
 
   const handleClearFilters = async () => {
-    setEventFilter('');
+    setEventFilter([]);
+    setEventSearch('');
+    setEventMenuOpen(false);
     setDateFrom('');
     setDateTo('');
-    await applyFilters(EMPTY_FILTERS);
+    await applyFilters(createEmptyFilters());
   };
 
   const handleExport = async () => {
     try {
       const filters = {};
-      if (appliedFilters.event_id) filters.event_id = appliedFilters.event_id;
+      if (appliedFilters.event_ids.length > 0) filters.event_ids = appliedFilters.event_ids.join(',');
       if (appliedFilters.date_from) filters.date_from = appliedFilters.date_from;
       if (appliedFilters.date_to) filters.date_to = appliedFilters.date_to;
 
@@ -153,21 +185,25 @@ export default function ReportsPage() {
     } catch { toast.error('خطا در خروجی CSV'); }
   };
 
-  const hasActiveFilters = Boolean(appliedFilters.event_id || appliedFilters.date_from || appliedFilters.date_to);
-  const hasPendingChanges = eventFilter !== appliedFilters.event_id
+  const hasActiveFilters = Boolean(appliedFilters.event_ids.length || appliedFilters.date_from || appliedFilters.date_to);
+  const hasPendingChanges = !haveSameEventIDs(eventFilter, appliedFilters.event_ids)
     || dateFrom !== appliedFilters.date_from
     || dateTo !== appliedFilters.date_to;
-  const appliedEventTitle = events.find(event => event.id === appliedFilters.event_id)?.title;
+  const appliedEvents = events.filter((event) => appliedFilters.event_ids.includes(event.id));
+  const draftEvents = events.filter((event) => eventFilter.includes(event.id));
+  const visibleEventOptions = events.filter((event) => (
+    event.title.toLocaleLowerCase('fa').includes(eventSearch.trim().toLocaleLowerCase('fa'))
+  ));
+
+  const toggleEventFilter = (eventID) => {
+    setEventFilter((current) => (
+      current.includes(eventID)
+        ? current.filter((id) => id !== eventID)
+        : [...current, eventID]
+    ));
+  };
 
   // ── Chart Data ──
-
-  // Applied filters drive every visualization; draft values do not affect the report.
-  const filteredEventData = Object.values(filteredReservations.reduce((result, reservation) => {
-    const name = reservation.event_title || 'رویداد نامشخص';
-    result[name] = result[name] || { name, value: 0 };
-    result[name].value += 1;
-    return result;
-  }, {}));
 
   const filteredStatusData = Object.values(filteredReservations.reduce((result, reservation) => {
     const status = reservation.status || 'UNKNOWN';
@@ -187,15 +223,12 @@ export default function ReportsPage() {
     return result;
   }, {})).sort((first, second) => first.order - second.order);
 
-  const barData = hasActiveFilters
-    ? filteredEventData.map((item) => {
-        const event = events.find((candidate) => candidate.title === item.name);
-        return {
-          ...item,
-          capacity: event?.total_capacity || 0,
-        };
-      })
-    : events.map((event) => {
+  const matchingReservationCounts = filteredReservations.reduce((result, reservation) => {
+    result[reservation.event_id] = (result[reservation.event_id] || 0) + 1;
+    return result;
+  }, {});
+  const chartEvents = appliedEvents.length > 0 ? appliedEvents : events;
+  const barData = chartEvents.map((event) => {
         const reservedCount = Number(event.reserved_count) || 0;
         const capacity = Number(event.total_capacity) || 0;
         const availableCount = Number.isFinite(Number(event.available_count))
@@ -206,11 +239,14 @@ export default function ReportsPage() {
           : (capacity > 0 ? Math.min((reservedCount / capacity) * 100, 100) : 0);
 
         return {
+          id: event.id,
           name: event.title,
           value: reservedCount,
           capacity,
           availableCount,
           occupancyRate,
+          matchingCount: matchingReservationCounts[event.id] || 0,
+          status: event.status,
         };
       });
 
@@ -219,19 +255,21 @@ export default function ReportsPage() {
   );
   const sortedBarData = [...barData]
     .sort((first, second) => (
-      (hasActiveFilters ? second.value - first.value : second.occupancyRate - first.occupancyRate)
+      second.occupancyRate - first.occupancyRate
       || second.value - first.value
       || first.name.localeCompare(second.name, 'fa')
     ))
     .map((item) => ({ ...item, color: eventColorByName.get(item.name) }));
   const totalBarReservations = sortedBarData.reduce((total, item) => total + item.value, 0);
-  const maxBarValue = Math.max(...sortedBarData.map(item => item.value), 0);
+  const totalMatchingReservations = sortedBarData.reduce((total, item) => total + item.matchingCount, 0);
   const totalEventCapacity = sortedBarData.reduce((total, item) => total + (item.capacity || 0), 0);
   const totalAvailableSeats = sortedBarData.reduce((total, item) => total + (item.availableCount || 0), 0);
   const overallOccupancyRate = totalEventCapacity > 0
     ? Math.min((totalBarReservations / totalEventCapacity) * 100, 100)
     : 0;
   const leadingEvent = sortedBarData[0];
+  const selectedEventCount = appliedFilters.event_ids.length;
+  const singleSelectedEvent = selectedEventCount === 1 ? sortedBarData[0] : null;
 
   const pieData = filteredStatusData;
   const totalStatusReservations = pieData.reduce((total, item) => total + item.value, 0);
@@ -283,18 +321,87 @@ export default function ReportsPage() {
           </div>
 
           <div className="grid sm:grid-cols-4 gap-4 items-end">
-            <div>
+            <div ref={eventMenuRef} className="relative">
               <label className="block text-xs text-ink-muted mb-1.5">رویداد</label>
-              <select
-                value={eventFilter}
-                onChange={e => setEventFilter(e.target.value)}
-                className="input-field"
+              <button
+                type="button"
+                onClick={() => setEventMenuOpen((open) => !open)}
+                className="input-field !flex items-center justify-between gap-3 text-right"
+                aria-haspopup="listbox"
+                aria-expanded={eventMenuOpen}
               >
-                <option value="">همه رویدادها</option>
-                {events.map(e => (
-                  <option key={e.id} value={e.id}>{e.title}</option>
-                ))}
-              </select>
+                <span className={eventFilter.length > 0 ? 'min-w-0 truncate text-ink-strong' : 'text-ink-muted'}>
+                  {eventFilter.length === 0 && 'همه رویدادها'}
+                  {eventFilter.length === 1 && draftEvents[0]?.title}
+                  {eventFilter.length > 1 && `${eventFilter.length.toLocaleString('fa-IR')} رویداد انتخاب شده`}
+                </span>
+                <ChevronDownIcon className={`h-4 w-4 shrink-0 text-ink-faint transition-transform ${eventMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {eventMenuOpen && (
+                <div className="absolute inset-x-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-line-strong bg-surface-card shadow-2xl">
+                  <div className="flex items-center justify-between gap-2 border-b border-line px-3 py-2.5">
+                    <span className="text-xs font-bold text-ink-strong">
+                      {eventFilter.length.toLocaleString('fa-IR')} انتخاب
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setEventFilter(events.map((event) => event.id))}
+                        className="rounded-lg px-2 py-1 text-[11px] font-medium text-brand-ink hover:bg-brand-soft"
+                      >
+                        انتخاب همه
+                      </button>
+                      {eventFilter.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setEventFilter([])}
+                          className="rounded-lg px-2 py-1 text-[11px] font-medium text-danger-ink hover:bg-danger-soft"
+                        >
+                          پاک کردن
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="border-b border-line p-2.5">
+                    <div className="flex items-center gap-2 rounded-lg border border-line bg-surface-alt px-2.5">
+                      <MagnifyingGlassIcon className="h-4 w-4 shrink-0 text-ink-faint" />
+                      <input
+                        type="search"
+                        value={eventSearch}
+                        onChange={(event) => setEventSearch(event.target.value)}
+                        placeholder="جست‌وجوی رویداد..."
+                        className="min-w-0 flex-1 bg-transparent py-2 text-xs text-ink-strong outline-none placeholder:text-ink-faint"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="max-h-64 overflow-y-auto p-1.5" role="listbox" aria-multiselectable="true">
+                    {visibleEventOptions.map((event) => {
+                      const selected = eventFilter.includes(event.id);
+                      return (
+                        <button
+                          type="button"
+                          key={event.id}
+                          onClick={() => toggleEventFilter(event.id)}
+                          role="option"
+                          aria-selected={selected}
+                          className={`flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-right transition-colors ${selected ? 'bg-brand-soft text-brand-ink' : 'text-ink hover:bg-surface-alt'}`}
+                        >
+                          <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${selected ? 'border-brand-accent bg-brand-accent text-white' : 'border-line-strong bg-surface-card'}`}>
+                            {selected && <CheckIcon className="h-3 w-3" strokeWidth={3} />}
+                          </span>
+                          <span className="min-w-0 flex-1 text-xs font-medium leading-5">{event.title}</span>
+                        </button>
+                      );
+                    })}
+                    {visibleEventOptions.length === 0 && (
+                      <p className="px-3 py-6 text-center text-xs text-ink-faint">رویدادی پیدا نشد</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-xs text-ink-muted mb-1.5">از تاریخ</label>
@@ -314,6 +421,25 @@ export default function ReportsPage() {
             </div>
           </div>
 
+          {draftEvents.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="text-[11px] text-ink-faint">انتخاب فعلی:</span>
+              {draftEvents.map((event) => (
+                <span key={event.id} className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-brand-border bg-brand-soft px-2.5 py-1 text-[11px] font-medium text-brand-ink">
+                  <span className="break-words">{event.title}</span>
+                  <button
+                    type="button"
+                    onClick={() => toggleEventFilter(event.id)}
+                    className="shrink-0 rounded-full p-0.5 hover:bg-surface-card"
+                    aria-label={`حذف ${event.title} از فیلتر`}
+                  >
+                    <XMarkIcon className="h-3.5 w-3.5" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
           {hasPendingChanges && (
             <div role="status" className="mt-4 rounded-xl border border-warning-border bg-warning-soft px-4 py-2.5 text-xs text-warning-ink">
               تغییرات جدید هنوز اعمال نشده‌اند؛ برای به‌روزرسانی نمودارها و جدول، دکمه «نمایش نتایج» را بزنید.
@@ -331,7 +457,7 @@ export default function ReportsPage() {
                   </p>
                   <p className="mt-1 text-xs leading-5 text-ink-muted">
                     {hasActiveFilters
-                      ? 'نمودارها، جدول جزئیات و خروجی CSV بر اساس فیلترهای زیر نمایش داده می‌شوند.'
+                      ? 'فیلتر رویداد روی همه بخش‌ها اعمال شده است؛ بازه تاریخ نیز رکوردهای رزرو، جدول و CSV را محدود می‌کند.'
                       : 'هیچ محدودیتی روی رویداد یا تاریخ رزرو اعمال نشده است.'}
                   </p>
                 </div>
@@ -343,11 +469,11 @@ export default function ReportsPage() {
 
             {hasActiveFilters && (
               <div className="mt-3 flex flex-wrap gap-2 border-t border-success-border/60 pt-3">
-                {appliedFilters.event_id && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-border bg-brand-soft px-3 py-1 text-xs font-medium text-brand-ink">
-                    رویداد: {appliedEventTitle || 'رویداد انتخاب‌شده'}
+                {appliedEvents.map((event) => (
+                  <span key={event.id} className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-brand-border bg-brand-soft px-3 py-1 text-xs font-medium text-brand-ink">
+                    رویداد: <span className="break-words">{event.title}</span>
                   </span>
-                )}
+                ))}
                 {appliedFilters.date_from && (
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-warning-border bg-warning-soft px-3 py-1 text-xs font-medium text-warning-ink">
                     از {formatFilterDate(appliedFilters.date_from)}
@@ -376,12 +502,14 @@ export default function ReportsPage() {
                     </div>
                     <div className="min-w-0">
                       <h3 className="text-lg font-bold text-ink-strong">
-                        {hasActiveFilters ? 'رزروهای منطبق به تفکیک رویداد' : 'تحلیل نرخ پرشدگی رویدادها'}
+                        {selectedEventCount === 1 && 'وضعیت ظرفیت رویداد انتخاب‌شده'}
+                        {selectedEventCount > 1 && 'مقایسه رویدادهای انتخاب‌شده'}
+                        {selectedEventCount === 0 && 'تحلیل نرخ پرشدگی رویدادها'}
                       </h3>
                       <p className="mt-1 text-xs leading-5 text-ink-muted">
-                        {hasActiveFilters
-                          ? 'مرتب‌شده بر اساس تعداد رزروهای منطبق با فیلتر؛ رنگ‌ها با نمودار سمت چپ یکسان‌اند.'
-                          : 'مقایسه تعداد رزرو با ظرفیت واقعی؛ رویدادهای پُرتر در ابتدای فهرست قرار دارند.'}
+                        {selectedEventCount === 1
+                          ? 'تعداد رزرو فعال، ظرفیت باقیمانده و نرخ پرشدگی این رویداد را یکجا ببینید.'
+                          : 'مقایسه بر اساس نسبت رزرو فعال به ظرفیت واقعی؛ رویدادهای پُرتر بالاتر قرار دارند.'}
                       </p>
                     </div>
                   </div>
@@ -391,13 +519,18 @@ export default function ReportsPage() {
                         {sortedBarData.length.toLocaleString('fa-IR')} رویداد
                       </span>
                       <span className="rounded-full border border-brand-border bg-brand-soft px-2.5 py-1 font-bold text-brand-ink">
-                        {totalBarReservations.toLocaleString('fa-IR')} {hasActiveFilters ? 'رزرو منطبق' : 'رزرو فعال'}
+                        {totalBarReservations.toLocaleString('fa-IR')} رزرو فعال
                       </span>
+                      {hasActiveFilters && (
+                        <span className="rounded-full border border-line-strong bg-surface-alt px-2.5 py-1 font-medium text-ink-muted">
+                          {totalMatchingReservations.toLocaleString('fa-IR')} نتیجه منطبق
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
 
-                {!hasActiveFilters && sortedBarData.length > 0 && (
+                {!singleSelectedEvent && sortedBarData.length > 0 && (
                   <>
                     <div className="mb-4 grid grid-cols-2 gap-2">
                       <div className="rounded-xl border border-line bg-surface-alt px-3 py-2.5">
@@ -432,13 +565,90 @@ export default function ReportsPage() {
                   </>
                 )}
 
-                {sortedBarData.length > 0 ? (
-                  <div className="space-y-2" role="list" aria-label={hasActiveFilters ? 'مقایسه تعداد رزرو رویدادها' : 'مقایسه نرخ پرشدگی رویدادها'}>
+                {singleSelectedEvent ? (
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-brand-border bg-brand-soft px-4 py-4">
+                      <p className="text-xs font-medium text-brand-ink">رویداد انتخاب‌شده</p>
+                      <h4 className="mt-1.5 whitespace-normal break-words text-base font-extrabold leading-7 text-ink-strong">
+                        {singleSelectedEvent.name}
+                      </h4>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-xl border border-line bg-surface-alt px-3 py-3">
+                        <p className="text-[10px] font-medium text-ink-faint">رزرو فعال</p>
+                        <p className="mt-1 text-xl font-extrabold text-ink-strong tabular-nums">
+                          {singleSelectedEvent.value.toLocaleString('fa-IR')}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-line bg-surface-alt px-3 py-3">
+                        <p className="text-[10px] font-medium text-ink-faint">ظرفیت کل</p>
+                        <p className="mt-1 text-xl font-extrabold text-ink-strong tabular-nums">
+                          {singleSelectedEvent.capacity.toLocaleString('fa-IR')}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-line bg-surface-alt px-3 py-3">
+                        <p className="text-[10px] font-medium text-ink-faint">صندلی خالی</p>
+                        <p className="mt-1 text-xl font-extrabold text-success-ink tabular-nums">
+                          {singleSelectedEvent.availableCount.toLocaleString('fa-IR')}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-line bg-surface-alt px-3 py-3">
+                        <p className="text-[10px] font-medium text-ink-faint">نرخ پرشدگی</p>
+                        <p className="mt-1 text-xl font-extrabold text-brand-ink tabular-nums" dir="ltr">
+                          {singleSelectedEvent.occupancyRate.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-line bg-surface-alt px-4 py-4">
+                      <div className="mb-2 flex items-center justify-between gap-3 text-xs">
+                        <span className="font-bold text-ink-strong">ترکیب ظرفیت</span>
+                        <span className="font-medium text-ink-muted tabular-nums">
+                          {singleSelectedEvent.value.toLocaleString('fa-IR')} از {singleSelectedEvent.capacity.toLocaleString('fa-IR')}
+                        </span>
+                      </div>
+                      <div
+                        className="h-3 overflow-hidden rounded-full bg-surface-muted"
+                        role="progressbar"
+                        aria-label={`${singleSelectedEvent.name}: ${singleSelectedEvent.occupancyRate.toFixed(1)} درصد پرشدگی`}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={singleSelectedEvent.occupancyRate}
+                      >
+                        <div
+                          className="ml-auto h-full rounded-full transition-[width,filter] duration-700 ease-out"
+                          style={{
+                            width: `${Math.max(singleSelectedEvent.occupancyRate, singleSelectedEvent.value > 0 ? 3 : 0)}%`,
+                            backgroundColor: singleSelectedEvent.color,
+                            boxShadow: `0 0 16px color-mix(in srgb, ${singleSelectedEvent.color} 38%, transparent)`,
+                          }}
+                        />
+                      </div>
+                      <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-ink-faint">
+                        <span>{singleSelectedEvent.value.toLocaleString('fa-IR')} صندلی رزرو شده</span>
+                        <span>{singleSelectedEvent.availableCount.toLocaleString('fa-IR')} صندلی قابل رزرو</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2.5 rounded-xl border border-brand-border bg-brand-soft px-3.5 py-3">
+                      <LightBulbIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-accent" />
+                      <p className="text-xs leading-5 text-brand-ink">
+                        {singleSelectedEvent.occupancyRate >= 80
+                          ? 'این رویداد به تکمیل ظرفیت نزدیک است و ظرفیت باقی‌مانده باید پایش شود.'
+                          : singleSelectedEvent.occupancyRate >= 50
+                            ? 'بیش از نیمی از ظرفیت این رویداد پُر شده است.'
+                            : 'هنوز بیش از نیمی از ظرفیت این رویداد برای رزرو در دسترس است.'}
+                        {hasActiveFilters && (
+                          <> در محدوده فعلی، <strong>{singleSelectedEvent.matchingCount.toLocaleString('fa-IR')} رکورد رزرو</strong> با فیلترها منطبق است.</>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                ) : sortedBarData.length > 0 ? (
+                  <div className="space-y-2" role="list" aria-label="مقایسه نرخ پرشدگی رویدادها">
                     {sortedBarData.map((entry, index) => {
-                      const relativeWidth = hasActiveFilters
-                        ? (maxBarValue > 0 ? (entry.value / maxBarValue) * 100 : 0)
-                        : entry.occupancyRate;
-                      const share = totalBarReservations > 0 ? (entry.value / totalBarReservations) * 100 : 0;
+                      const relativeWidth = entry.occupancyRate;
 
                       return (
                         <div
@@ -459,35 +669,35 @@ export default function ReportsPage() {
                               {entry.name}
                             </span>
                             <span className="shrink-0 rounded-lg bg-surface-muted px-2 py-1 text-xs font-bold text-ink-strong tabular-nums">
-                              {hasActiveFilters
-                                ? `${entry.value.toLocaleString('fa-IR')} رزرو`
-                                : `${entry.occupancyRate.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪`}
+                              {entry.occupancyRate.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪
                             </span>
                           </div>
 
-                          {!hasActiveFilters && (
-                            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 pr-[3.25rem] text-[11px] text-ink-faint">
-                              <span>
-                                <strong className="text-ink">{entry.value.toLocaleString('fa-IR')}</strong> رزرو از{' '}
-                                <strong className="text-ink">{entry.capacity.toLocaleString('fa-IR')}</strong> صندلی
-                              </span>
-                              <span aria-hidden="true">•</span>
-                              <span>
-                                <strong className="text-ink">{entry.availableCount.toLocaleString('fa-IR')}</strong> صندلی خالی
-                              </span>
-                            </div>
-                          )}
+                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 pr-[3.25rem] text-[11px] text-ink-faint">
+                            <span>
+                              <strong className="text-ink">{entry.value.toLocaleString('fa-IR')}</strong> رزرو فعال از{' '}
+                              <strong className="text-ink">{entry.capacity.toLocaleString('fa-IR')}</strong> صندلی
+                            </span>
+                            <span aria-hidden="true">•</span>
+                            <span>
+                              <strong className="text-ink">{entry.availableCount.toLocaleString('fa-IR')}</strong> صندلی خالی
+                            </span>
+                            {hasActiveFilters && (
+                              <>
+                                <span aria-hidden="true">•</span>
+                                <span><strong className="text-ink">{entry.matchingCount.toLocaleString('fa-IR')}</strong> رکورد منطبق</span>
+                              </>
+                            )}
+                          </div>
 
                           <div className="mt-2 flex items-center gap-3 pr-[3.25rem]">
                             <div
                               className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface-muted"
                               role="progressbar"
-                              aria-label={hasActiveFilters
-                                ? `${entry.name}: ${entry.value} رزرو منطبق`
-                                : `${entry.name}: ${entry.occupancyRate.toFixed(1)} درصد پرشدگی`}
+                              aria-label={`${entry.name}: ${entry.occupancyRate.toFixed(1)} درصد پرشدگی`}
                               aria-valuemin={0}
-                              aria-valuemax={hasActiveFilters ? maxBarValue : 100}
-                              aria-valuenow={hasActiveFilters ? entry.value : entry.occupancyRate}
+                              aria-valuemax={100}
+                              aria-valuenow={entry.occupancyRate}
                             >
                               <div
                                 className="ml-auto h-full rounded-full transition-[width,filter] duration-700 ease-out group-hover:brightness-110"
@@ -499,9 +709,7 @@ export default function ReportsPage() {
                               />
                             </div>
                             <span className="w-12 shrink-0 text-left text-[11px] font-medium text-ink-faint tabular-nums" dir="ltr">
-                              {hasActiveFilters
-                                ? `${share.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪`
-                                : `${entry.availableCount.toLocaleString('fa-IR')} خالی`}
+                              {entry.availableCount.toLocaleString('fa-IR')} خالی
                             </span>
                           </div>
                         </div>

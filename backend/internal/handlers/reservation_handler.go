@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -10,6 +11,32 @@ import (
 	"ticket-reservation-system/internal/services"
 	"ticket-reservation-system/pkg/utils"
 )
+
+func parseEventIDs(value string) ([]uuid.UUID, error) {
+	parts := strings.Split(value, ",")
+	ids := make([]uuid.UUID, 0, len(parts))
+	seen := make(map[uuid.UUID]struct{}, len(parts))
+
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed == "" {
+			continue
+		}
+
+		id, err := uuid.Parse(trimmed)
+		if err != nil {
+			return nil, err
+		}
+		if _, exists := seen[id]; exists {
+			continue
+		}
+
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+
+	return ids, nil
+}
 
 type ReservationHandler struct {
 	reservationService *services.ReservationService
@@ -116,7 +143,14 @@ func (h *ReservationHandler) CancelReservation(c *gin.Context) {
 func (h *ReservationHandler) GetAllReservations(c *gin.Context) {
 	filters := make(map[string]interface{})
 
-	if eventID := c.Query("event_id"); eventID != "" {
+	if eventIDsValue := c.Query("event_ids"); eventIDsValue != "" {
+		eventIDs, err := parseEventIDs(eventIDsValue)
+		if err != nil || len(eventIDs) == 0 {
+			utils.BadRequest(c, "شناسه یکی از رویدادها نامعتبر است")
+			return
+		}
+		filters["event_ids"] = eventIDs
+	} else if eventID := c.Query("event_id"); eventID != "" {
 		filters["event_id"] = eventID
 	}
 	if dateFrom := c.Query("date_from"); dateFrom != "" {
