@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import {
   ArrowDownTrayIcon, MagnifyingGlassIcon, FunnelIcon,
   ChartBarIcon, CheckCircleIcon, CheckIcon, ChevronDownIcon,
-  LightBulbIcon, TicketIcon, XMarkIcon,
+  LightBulbIcon, XMarkIcon,
 } from '@heroicons/react/24/outline';
 import {
   PieChart, Pie, Cell, LineChart, Line,
@@ -41,6 +41,16 @@ const formatFilterDate = (value) => {
   return new Intl.DateTimeFormat('fa-IR', {
     year: 'numeric',
     month: 'long',
+    day: 'numeric',
+  }).format(date);
+};
+
+const formatChartDate = (value) => {
+  if (!value) return 'تاریخ نامشخص';
+  const date = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('fa-IR', {
+    month: 'short',
     day: 'numeric',
   }).format(date);
 };
@@ -256,40 +266,41 @@ export default function ReportsPage() {
   }, {})).sort((first, second) => first.order - second.order);
 
   const matchingReservationStats = filteredReservations.reduce((result, reservation) => {
-    const eventID = reservation.event_id;
-    if (!eventID) return result;
-
+    const eventID = normalizeIdentifier(reservation.event_id ?? reservation.event?.id);
+    const eventTitle = normalizeIdentifier(reservation.event_title ?? reservation.event?.title);
+    const eventKey = eventID || (eventTitle ? `title:${eventTitle}` : '');
+    if (!eventKey) return result;
     const status = reservation.status || 'UNKNOWN';
-    result[eventID] = result[eventID] || {
+    result[eventKey] = result[eventKey] || {
       total: 0,
       active: 0,
       cancelled: 0,
       completed: 0,
       unknown: 0,
     };
-    result[eventID].total += 1;
-    if (status === 'ACTIVE') result[eventID].active += 1;
-    else if (status === 'CANCELLED') result[eventID].cancelled += 1;
-    else if (status === 'COMPLETED') result[eventID].completed += 1;
-    else result[eventID].unknown += 1;
+    result[eventKey].total += 1;
+    if (status === 'ACTIVE') result[eventKey].active += 1;
+    else if (status === 'CANCELLED') result[eventKey].cancelled += 1;
+    else if (status === 'COMPLETED') result[eventKey].completed += 1;
+    else result[eventKey].unknown += 1;
     return result;
   }, {});
 
-  const chartEvents = hasActiveFilters
-    ? (appliedEvents.length > 0
-        ? appliedEvents
-        : events.filter((event) => matchingReservationStats[event.id]?.total > 0))
-    : events;
+  const chartEvents = appliedEvents.length > 0
+    ? appliedEvents
+    : events.filter((event) => {
+      const idKey = normalizeIdentifier(event.id);
+      const titleKey = `title:${normalizeIdentifier(event.title)}`;
+      return (matchingReservationStats[idKey]?.total || matchingReservationStats[titleKey]?.total || 0) > 0;
+    });
   const barData = chartEvents.map((event) => {
     const reservedCount = Number(event.reserved_count) || 0;
     const capacity = Number(event.total_capacity) || 0;
     const availableCount = Number.isFinite(Number(event.available_count))
       ? Math.max(Number(event.available_count), 0)
       : Math.max(capacity - reservedCount, 0);
-    const occupancyRate = Number.isFinite(Number(event.occupancy_rate))
-      ? Math.min(Math.max(Number(event.occupancy_rate), 0), 100)
-      : (capacity > 0 ? Math.min((reservedCount / capacity) * 100, 100) : 0);
-    const matches = matchingReservationStats[event.id] || {
+    const matches = matchingReservationStats[normalizeIdentifier(event.id)]
+      || matchingReservationStats[`title:${normalizeIdentifier(event.title)}`] || {
       total: 0,
       active: 0,
       cancelled: 0,
@@ -303,7 +314,6 @@ export default function ReportsPage() {
       value: reservedCount,
       capacity,
       availableCount,
-      occupancyRate,
       matchingCount: matches.total,
       matchingActive: matches.active,
       matchingCancelled: matches.cancelled,
@@ -318,25 +328,36 @@ export default function ReportsPage() {
   );
   const sortedBarData = [...barData]
     .sort((first, second) => (
-      (hasActiveFilters
-        ? second.matchingCount - first.matchingCount
-        : second.occupancyRate - first.occupancyRate)
+      second.matchingCount - first.matchingCount
       || second.matchingActive - first.matchingActive
       || second.value - first.value
       || first.name.localeCompare(second.name, 'fa')
     ))
     .map((item) => ({ ...item, color: eventColorByName.get(item.name) }));
-  const totalBarReservations = sortedBarData.reduce((total, item) => total + item.value, 0);
   const totalMatchingReservations = sortedBarData.reduce((total, item) => total + item.matchingCount, 0);
   const maxMatchingReservations = Math.max(...sortedBarData.map((item) => item.matchingCount), 0);
-  const totalEventCapacity = sortedBarData.reduce((total, item) => total + (item.capacity || 0), 0);
-  const totalAvailableSeats = sortedBarData.reduce((total, item) => total + (item.availableCount || 0), 0);
-  const overallOccupancyRate = totalEventCapacity > 0
-    ? Math.min((totalBarReservations / totalEventCapacity) * 100, 100)
-    : 0;
   const leadingEvent = sortedBarData[0];
   const selectedEventCount = appliedFilters.event_ids.length;
   const singleSelectedEvent = selectedEventCount === 1 ? sortedBarData[0] : null;
+
+  const dailyTrendData = Object.values(filteredReservations.reduce((result, reservation) => {
+    const date = String(reservation.reserved_at || reservation.created_at || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return result;
+
+    result[date] = result[date] || {
+      date,
+      label: formatChartDate(date),
+      count: 0,
+    };
+    result[date].count += 1;
+    return result;
+  }, {})).sort((first, second) => first.date.localeCompare(second.date));
+  const busiestDay = dailyTrendData.reduce((current, item) => (
+    !current || item.count > current.count ? item : current
+  ), null);
+  const averageDailyReservations = dailyTrendData.length > 0
+    ? totalMatchingReservations / dailyTrendData.length
+    : 0;
 
   const pieData = filteredStatusData;
   const totalStatusReservations = pieData.reduce((total, item) => total + item.value, 0);
@@ -570,36 +591,32 @@ export default function ReportsPage() {
                     </div>
                     <div className="min-w-0">
                       <h3 className="text-lg font-bold text-ink-strong">
-                        {hasActiveFilters
-                          ? selectedEventCount === 1
-                            ? 'نتیجه فیلتر برای رویداد انتخاب‌شده'
-                            : 'رزروهای منطبق به تفکیک رویداد'
-                          : 'تحلیل نرخ پرشدگی رویدادها'}
+                        {selectedEventCount === 1
+                          ? `روند ثبت رزروهای ${singleSelectedEvent?.name || 'رویداد انتخاب‌شده'}`
+                          : hasActiveFilters
+                            ? 'رزروهای منطبق به تفکیک رویداد'
+                            : 'توزیع کل رزروها به تفکیک رویداد'}
                       </h3>
                       <p className="mt-1 text-xs leading-5 text-ink-muted">
-                        {hasActiveFilters
-                          ? selectedEventCount === 1
-                            ? 'فقط رکوردهای منطبق با رویداد و بازه تاریخ فعلی، همراه با تفکیک وضعیت نمایش داده می‌شوند.'
-                            : 'تعداد و وضعیت رزروها دقیقاً بر اساس رویدادها و بازه تاریخ اعمال‌شده محاسبه شده‌اند.'
-                          : 'مقایسه بر اساس نسبت رزرو فعال به ظرفیت واقعی؛ رویدادهای پُرتر بالاتر قرار دارند.'}
+                        {selectedEventCount === 1
+                          ? 'هر نقطه تعداد رزروهای ثبت‌شده در یک روز را نشان می‌دهد؛ بنابراین این نمودار با نمودار وضعیت‌ها تکراری نیست.'
+                          : 'هر ردیف دقیقاً از همان رزروهایی ساخته شده که در جدول جزئیات پایین صفحه نمایش داده می‌شوند.'}
                       </p>
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-wrap items-center gap-2 text-xs">
-                    {sortedBarData.length > 0 && (
+                    {selectedEventCount === 1 ? (
+                      <span className="rounded-full border border-line-strong bg-surface-alt px-2.5 py-1 font-medium text-ink-muted">
+                        {dailyTrendData.length.toLocaleString('fa-IR')} روز دارای رزرو
+                      </span>
+                    ) : sortedBarData.length > 0 && (
                       <span className="rounded-full border border-line-strong bg-surface-alt px-2.5 py-1 font-medium text-ink-muted">
                         {sortedBarData.length.toLocaleString('fa-IR')} رویداد
                       </span>
                     )}
-                    {hasActiveFilters ? (
-                      <span className="rounded-full border border-brand-border bg-brand-soft px-2.5 py-1 font-bold text-brand-ink">
-                        {totalMatchingReservations.toLocaleString('fa-IR')} نتیجه منطبق
-                      </span>
-                    ) : (
-                      <span className="rounded-full border border-brand-border bg-brand-soft px-2.5 py-1 font-bold text-brand-ink">
-                        {totalBarReservations.toLocaleString('fa-IR')} رزرو فعال
-                      </span>
-                    )}
+                    <span className="rounded-full border border-brand-border bg-brand-soft px-2.5 py-1 font-bold text-brand-ink">
+                      {totalMatchingReservations.toLocaleString('fa-IR')} رزرو نمایش‌داده‌شده
+                    </span>
                   </div>
                 </div>
 
@@ -607,33 +624,21 @@ export default function ReportsPage() {
                   <>
                     <div className="mb-4 grid grid-cols-2 gap-2">
                       <div className="rounded-xl border border-line bg-surface-alt px-3 py-2.5">
-                        <p className="text-[10px] font-medium text-ink-faint">
-                          {hasActiveFilters ? 'کل نتایج منطبق' : 'پرشدگی کل'}
+                        <p className="text-[10px] font-medium text-ink-faint">کل رزروهای نمایش‌داده‌شده</p>
+                        <p className="mt-1 text-base font-extrabold text-ink-strong tabular-nums">
+                          {totalMatchingReservations.toLocaleString('fa-IR')} رزرو
                         </p>
-                        {hasActiveFilters ? (
-                          <p className="mt-1 text-base font-extrabold text-ink-strong tabular-nums">
-                            {totalMatchingReservations.toLocaleString('fa-IR')} رزرو
-                          </p>
-                        ) : (
-                          <p className="mt-1 text-base font-extrabold text-ink-strong tabular-nums" dir="ltr">
-                            {overallOccupancyRate.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪
-                          </p>
-                        )}
                       </div>
                       <div className="rounded-xl border border-line bg-surface-alt px-3 py-2.5">
-                        <p className="text-[10px] font-medium text-ink-faint">
-                          {hasActiveFilters ? 'رزرو فعال در نتایج' : 'صندلی باقی‌مانده'}
-                        </p>
+                        <p className="text-[10px] font-medium text-ink-faint">رزرو فعال در نتایج</p>
                         <p className="mt-1 text-base font-extrabold text-ink-strong tabular-nums">
-                          {(hasActiveFilters ? activeReservationCount : totalAvailableSeats).toLocaleString('fa-IR')}
+                          {activeReservationCount.toLocaleString('fa-IR')}
                         </p>
                       </div>
                       <div className="col-span-2 min-w-0 rounded-xl border border-line bg-surface-alt px-3 py-3">
-                        <p className="text-[10px] font-medium text-ink-faint">
-                          {hasActiveFilters ? 'بیشترین نتیجه منطبق' : 'بیشترین تقاضا'}
-                        </p>
+                        <p className="text-[10px] font-medium text-ink-faint">بیشترین تعداد رزرو در نتایج</p>
                         <p className="mt-1.5 whitespace-normal break-words text-sm font-bold leading-6 text-ink-strong">
-                          {hasActiveFilters && totalMatchingReservations === 0
+                          {totalMatchingReservations === 0
                             ? 'هیچ رزروی با فیلتر فعلی منطبق نیست'
                             : leadingEvent.name}
                         </p>
@@ -643,25 +648,16 @@ export default function ReportsPage() {
                     <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-brand-border bg-brand-soft px-3.5 py-3">
                       <LightBulbIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-accent" />
                       <p className="text-xs leading-5 text-brand-ink">
-                        {hasActiveFilters ? (
-                          totalMatchingReservations > 0 ? (
-                            <>
-                              <strong>{leadingEvent.name}</strong> با{' '}
-                              <strong>{leadingEvent.matchingCount.toLocaleString('fa-IR')} رزرو منطبق</strong>{' '}
-                              بیشترین سهم از نتایج فعلی را دارد. در کل نتایج،{' '}
-                              <strong>{activeReservationCount.toLocaleString('fa-IR')} فعال</strong>،{' '}
-                              <strong>{cancelledReservationCount.toLocaleString('fa-IR')} لغوشده</strong> و{' '}
-                              <strong>{completedReservationCount.toLocaleString('fa-IR')} تکمیل‌شده</strong> است.
-                            </>
-                          ) : 'برای فیلتر فعلی داده‌ای وجود ندارد؛ رویداد یا بازه تاریخ را تغییر دهید.'
-                        ) : (
+                        {totalMatchingReservations > 0 ? (
                           <>
-                            <strong>{leadingEvent.name}</strong> با نرخ پرشدگی{' '}
-                            <strong>{leadingEvent.occupancyRate.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪</strong>{' '}
-                            بیشترین تقاضا را دارد؛ در مجموع{' '}
-                            <strong>{totalAvailableSeats.toLocaleString('fa-IR')} صندلی</strong> هنوز خالی است.
+                            <strong>{leadingEvent.name}</strong> با{' '}
+                            <strong>{leadingEvent.matchingCount.toLocaleString('fa-IR')} رزرو</strong>{' '}
+                            بیشترین سهم از نتایج فعلی را دارد. در کل نتایج،{' '}
+                            <strong>{activeReservationCount.toLocaleString('fa-IR')} فعال</strong>،{' '}
+                            <strong>{cancelledReservationCount.toLocaleString('fa-IR')} لغوشده</strong> و{' '}
+                            <strong>{completedReservationCount.toLocaleString('fa-IR')} تکمیل‌شده</strong> است.
                           </>
-                        )}
+                        ) : 'برای فیلتر فعلی داده‌ای وجود ندارد؛ رویداد یا بازه تاریخ را تغییر دهید.'}
                       </p>
                     </div>
                   </>
@@ -676,100 +672,102 @@ export default function ReportsPage() {
                       </h4>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                       <div className="rounded-xl border border-line bg-surface-alt px-3 py-3">
-                        <p className="text-[10px] font-medium text-ink-faint">کل نتایج منطبق</p>
+                        <p className="text-[10px] font-medium text-ink-faint">رزرو در بازه انتخابی</p>
                         <p className="mt-1 text-xl font-extrabold text-ink-strong tabular-nums">
                           {singleSelectedEvent.matchingCount.toLocaleString('fa-IR')}
                         </p>
                       </div>
                       <div className="rounded-xl border border-line bg-surface-alt px-3 py-3">
-                        <p className="text-[10px] font-medium text-ink-faint">فعال</p>
-                        <p className="mt-1 text-xl font-extrabold text-success-ink tabular-nums">
-                          {singleSelectedEvent.matchingActive.toLocaleString('fa-IR')}
-                        </p>
-                      </div>
-                      <div className="rounded-xl border border-line bg-surface-alt px-3 py-3">
-                        <p className="text-[10px] font-medium text-ink-faint">لغوشده</p>
-                        <p className="mt-1 text-xl font-extrabold text-danger-ink tabular-nums">
-                          {singleSelectedEvent.matchingCancelled.toLocaleString('fa-IR')}
-                        </p>
-                      </div>
-                      <div className="rounded-xl border border-line bg-surface-alt px-3 py-3">
-                        <p className="text-[10px] font-medium text-ink-faint">تکمیل‌شده</p>
+                        <p className="text-[10px] font-medium text-ink-faint">میانگین روزهای دارای رزرو</p>
                         <p className="mt-1 text-xl font-extrabold text-brand-ink tabular-nums">
-                          {singleSelectedEvent.matchingCompleted.toLocaleString('fa-IR')}
+                          {averageDailyReservations.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-line bg-surface-alt px-3 py-3">
+                        <p className="text-[10px] font-medium text-ink-faint">بیشترین ثبت در یک روز</p>
+                        <p className="mt-1 text-xl font-extrabold text-warning-ink tabular-nums">
+                          {(busiestDay?.count || 0).toLocaleString('fa-IR')}
                         </p>
                       </div>
                     </div>
 
-                    <div className="rounded-xl border border-line bg-surface-alt px-4 py-4">
-                      <div className="mb-2 flex items-center justify-between gap-3 text-xs">
-                        <span className="font-bold text-ink-strong">ترکیب وضعیت نتایج</span>
-                        <span className="font-medium text-ink-muted tabular-nums">
-                          {singleSelectedEvent.matchingCount.toLocaleString('fa-IR')} رزرو
-                        </span>
+                    <div className="rounded-xl border border-line bg-surface-alt px-3 pb-2 pt-4 sm:px-4">
+                      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-1">
+                        <span className="text-xs font-bold text-ink-strong">تعداد رزرو ثبت‌شده در هر روز</span>
+                        {busiestDay && (
+                          <span className="text-[11px] font-medium text-ink-muted">
+                            اوج: {busiestDay.count.toLocaleString('fa-IR')} رزرو در {busiestDay.label}
+                          </span>
+                        )}
                       </div>
-                      {singleSelectedEvent.matchingCount > 0 ? (
-                        <>
-                          <div
-                            className="flex h-3 overflow-hidden rounded-full bg-surface-muted"
-                            role="img"
-                            aria-label={`${singleSelectedEvent.matchingActive} فعال، ${singleSelectedEvent.matchingCancelled} لغوشده و ${singleSelectedEvent.matchingCompleted} تکمیل‌شده`}
-                          >
-                            {singleSelectedEvent.matchingActive > 0 && (
-                              <span
-                                className="h-full bg-emerald-500 transition-[width] duration-700"
-                                style={{ width: `${(singleSelectedEvent.matchingActive / singleSelectedEvent.matchingCount) * 100}%` }}
-                              />
-                            )}
-                            {singleSelectedEvent.matchingCancelled > 0 && (
-                              <span
-                                className="h-full bg-red-500 transition-[width] duration-700"
-                                style={{ width: `${(singleSelectedEvent.matchingCancelled / singleSelectedEvent.matchingCount) * 100}%` }}
-                              />
-                            )}
-                            {singleSelectedEvent.matchingCompleted > 0 && (
-                              <span
-                                className="h-full bg-blue-500 transition-[width] duration-700"
-                                style={{ width: `${(singleSelectedEvent.matchingCompleted / singleSelectedEvent.matchingCount) * 100}%` }}
-                              />
-                            )}
-                            {singleSelectedEvent.matchingUnknown > 0 && (
-                              <span
-                                className="h-full bg-slate-400 transition-[width] duration-700"
-                                style={{ width: `${(singleSelectedEvent.matchingUnknown / singleSelectedEvent.matchingCount) * 100}%` }}
-                              />
-                            )}
-                          </div>
-                          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-ink-muted">
-                            <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-emerald-500" />فعال</span>
-                            <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-red-500" />لغوشده</span>
-                            <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-blue-500" />تکمیل‌شده</span>
-                          </div>
-                        </>
+                      {dailyTrendData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={270}>
+                          <LineChart data={dailyTrendData} margin={{ top: 22, right: 10, left: 0, bottom: 4 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} vertical={false} />
+                            <XAxis
+                              dataKey="label"
+                              stroke={chartColors.axis}
+                              fontSize={10}
+                              tickLine={false}
+                              axisLine={false}
+                              minTickGap={24}
+                              interval="preserveStartEnd"
+                            />
+                            <YAxis
+                              stroke={chartColors.axis}
+                              fontSize={10}
+                              allowDecimals={false}
+                              tickLine={false}
+                              axisLine={false}
+                              width={30}
+                            />
+                            <Tooltip
+                              formatter={(value) => [`${Number(value).toLocaleString('fa-IR')} رزرو`, 'تعداد ثبت']}
+                              contentStyle={chartTooltipStyle}
+                              labelStyle={chartTooltipLabelStyle}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="count"
+                              name="تعداد رزرو"
+                              stroke={chartColors.primary}
+                              strokeWidth={3}
+                              connectNulls={false}
+                              dot={{ fill: chartColors.primary, r: 4.5, strokeWidth: 2, stroke: chartColors.dotStroke }}
+                              activeDot={{ r: 7, strokeWidth: 3, stroke: chartColors.dotStroke }}
+                              label={dailyTrendData.length <= 12 ? {
+                                position: 'top',
+                                fill: chartColors.axis,
+                                fontSize: 10,
+                              } : undefined}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
                       ) : (
-                        <p className="rounded-lg bg-surface-muted px-3 py-4 text-center text-xs text-ink-faint">
+                        <p className="my-8 rounded-lg bg-surface-muted px-3 py-8 text-center text-xs text-ink-faint">
                           در محدوده انتخاب‌شده هیچ رزروی ثبت نشده است.
                         </p>
                       )}
                     </div>
 
-                    <div className="flex items-start gap-2.5 rounded-xl border border-brand-border bg-brand-soft px-3.5 py-3">
-                      <LightBulbIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-accent" />
-                      <p className="text-xs leading-5 text-brand-ink">
-                        فیلتر فعلی <strong>{singleSelectedEvent.matchingCount.toLocaleString('fa-IR')} رکورد رزرو</strong> را پیدا کرده است. وضعیت فعلی ظرفیت رویداد نیز{' '}
-                        <strong>{singleSelectedEvent.value.toLocaleString('fa-IR')} رزرو فعال از {singleSelectedEvent.capacity.toLocaleString('fa-IR')} صندلی</strong>{' '}
-                        و <strong>{singleSelectedEvent.availableCount.toLocaleString('fa-IR')} صندلی خالی</strong> است.
-                      </p>
-                    </div>
+                    {busiestDay && (
+                      <div className="flex items-start gap-2.5 rounded-xl border border-brand-border bg-brand-soft px-3.5 py-3">
+                        <LightBulbIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-accent" />
+                        <p className="text-xs leading-5 text-brand-ink">
+                          بیشترین ثبت رزرو این رویداد در <strong>{busiestDay.label}</strong> با{' '}
+                          <strong>{busiestDay.count.toLocaleString('fa-IR')} رزرو</strong> بوده است. نمودار وضعیت سمت چپ، همین نتایج را از نظر فعال، لغوشده و تکمیل‌شده تحلیل می‌کند.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : sortedBarData.length > 0 ? (
-                  <div className="space-y-2" role="list" aria-label={hasActiveFilters ? 'مقایسه رزروهای منطبق رویدادها' : 'مقایسه نرخ پرشدگی رویدادها'}>
+                  <div className="space-y-2" role="list" aria-label="مقایسه تعداد رزروهای نمایش‌داده‌شده رویدادها">
                     {sortedBarData.map((entry, index) => {
-                      const relativeWidth = hasActiveFilters
-                        ? (maxMatchingReservations > 0 ? (entry.matchingCount / maxMatchingReservations) * 100 : 0)
-                        : entry.occupancyRate;
+                      const relativeWidth = maxMatchingReservations > 0
+                        ? (entry.matchingCount / maxMatchingReservations) * 100
+                        : 0;
                       const resultShare = totalMatchingReservations > 0
                         ? (entry.matchingCount / totalMatchingReservations) * 100
                         : 0;
@@ -793,59 +791,38 @@ export default function ReportsPage() {
                               {entry.name}
                             </span>
                             <span className="shrink-0 rounded-lg bg-surface-muted px-2 py-1 text-xs font-bold text-ink-strong tabular-nums">
-                              {hasActiveFilters
-                                ? `${entry.matchingCount.toLocaleString('fa-IR')} رزرو`
-                                : `${entry.occupancyRate.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪`}
+                              {entry.matchingCount.toLocaleString('fa-IR')} رزرو
                             </span>
                           </div>
 
                           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 pr-[3.25rem] text-[11px] text-ink-faint">
-                            {hasActiveFilters ? (
-                              <>
-                                <span><strong className="text-success-ink">{entry.matchingActive.toLocaleString('fa-IR')}</strong> فعال</span>
-                                <span aria-hidden="true">•</span>
-                                <span><strong className="text-danger-ink">{entry.matchingCancelled.toLocaleString('fa-IR')}</strong> لغوشده</span>
-                                <span aria-hidden="true">•</span>
-                                <span><strong className="text-brand-ink">{entry.matchingCompleted.toLocaleString('fa-IR')}</strong> تکمیل‌شده</span>
-                              </>
-                            ) : (
-                              <>
-                                <span>
-                                  <strong className="text-ink">{entry.value.toLocaleString('fa-IR')}</strong> رزرو فعال از{' '}
-                                  <strong className="text-ink">{entry.capacity.toLocaleString('fa-IR')}</strong> صندلی
-                                </span>
-                                <span aria-hidden="true">•</span>
-                                <span>
-                                  <strong className="text-ink">{entry.availableCount.toLocaleString('fa-IR')}</strong> صندلی خالی
-                                </span>
-                              </>
-                            )}
+                            <span><strong className="text-success-ink">{entry.matchingActive.toLocaleString('fa-IR')}</strong> فعال</span>
+                            <span aria-hidden="true">•</span>
+                            <span><strong className="text-danger-ink">{entry.matchingCancelled.toLocaleString('fa-IR')}</strong> لغوشده</span>
+                            <span aria-hidden="true">•</span>
+                            <span><strong className="text-brand-ink">{entry.matchingCompleted.toLocaleString('fa-IR')}</strong> تکمیل‌شده</span>
                           </div>
 
                           <div className="mt-2 flex items-center gap-3 pr-[3.25rem]">
                             <div
                               className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface-muted"
                               role="progressbar"
-                              aria-label={hasActiveFilters
-                                ? `${entry.name}: ${entry.matchingCount} رزرو منطبق`
-                                : `${entry.name}: ${entry.occupancyRate.toFixed(1)} درصد پرشدگی`}
+                              aria-label={`${entry.name}: ${entry.matchingCount} رزرو نمایش‌داده‌شده`}
                               aria-valuemin={0}
-                              aria-valuemax={hasActiveFilters ? Math.max(maxMatchingReservations, 1) : 100}
-                              aria-valuenow={hasActiveFilters ? entry.matchingCount : entry.occupancyRate}
+                              aria-valuemax={Math.max(maxMatchingReservations, 1)}
+                              aria-valuenow={entry.matchingCount}
                             >
                               <div
                                 className="ml-auto h-full rounded-full transition-[width,filter] duration-700 ease-out group-hover:brightness-110"
                                 style={{
-                                  width: `${Math.max(relativeWidth, (hasActiveFilters ? entry.matchingCount : entry.value) > 0 ? 3 : 0)}%`,
+                                  width: `${Math.max(relativeWidth, entry.matchingCount > 0 ? 3 : 0)}%`,
                                   backgroundColor: entry.color,
                                   boxShadow: `0 0 14px color-mix(in srgb, ${entry.color} 34%, transparent)`,
                                 }}
                               />
                             </div>
                             <span className="w-12 shrink-0 text-left text-[11px] font-medium text-ink-faint tabular-nums" dir="ltr">
-                              {hasActiveFilters
-                                ? `${resultShare.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪`
-                                : `${entry.availableCount.toLocaleString('fa-IR')} خالی`}
+                              {resultShare.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪
                             </span>
                           </div>
                         </div>
@@ -870,7 +847,7 @@ export default function ReportsPage() {
                 <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <h3 className="text-lg font-bold text-ink-strong">
-                      {hasActiveFilters ? 'وضعیت رزروهای منطبق' : 'وضعیت کل رزروها'}
+                      {hasActiveFilters ? 'ترکیب وضعیت رزروهای منطبق' : 'ترکیب وضعیت کل رزروها'}
                     </h3>
                     <p className="mt-1 text-xs leading-5 text-ink-muted">
                       ترکیب رزروهای فعال، لغوشده و تکمیل‌شده در نتایج فعلی
@@ -992,48 +969,6 @@ export default function ReportsPage() {
                 )}
               </div>
             </div>
-
-            {/* Single-event filtered summary */}
-            {singleSelectedEvent && (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <div className="card p-5 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-brand-soft flex items-center justify-center">
-                    <ChartBarIcon className="w-6 h-6 text-brand-accent" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-extrabold text-ink-strong">{singleSelectedEvent.matchingCount.toLocaleString('fa-IR')}</p>
-                    <p className="text-xs text-ink-muted">کل نتایج منطبق</p>
-                  </div>
-                </div>
-                <div className="card p-5 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-success-soft flex items-center justify-center">
-                    <CheckCircleIcon className="w-6 h-6 text-success-ink" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-extrabold text-ink-strong">{singleSelectedEvent.matchingActive.toLocaleString('fa-IR')}</p>
-                    <p className="text-xs text-ink-muted">فعال در نتایج</p>
-                  </div>
-                </div>
-                <div className="card p-5 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-danger-soft flex items-center justify-center">
-                    <XMarkIcon className="w-6 h-6 text-danger-ink" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-extrabold text-ink-strong">{singleSelectedEvent.matchingCancelled.toLocaleString('fa-IR')}</p>
-                    <p className="text-xs text-ink-muted">لغوشده در نتایج</p>
-                  </div>
-                </div>
-                <div className="card p-5 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-warning-soft flex items-center justify-center">
-                    <TicketIcon className="w-6 h-6 text-warning-ink" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-extrabold text-ink-strong">{singleSelectedEvent.matchingCompleted.toLocaleString('fa-IR')}</p>
-                    <p className="text-xs text-ink-muted">تکمیل‌شده در نتایج</p>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Trend */}
             {!hasActiveFilters && trend.length > 0 && (
