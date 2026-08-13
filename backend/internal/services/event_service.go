@@ -38,6 +38,19 @@ func (s *EventService) GetActiveEvents() ([]models.EventListResponse, error) {
 		return nil, fmt.Errorf("failed to fetch events: %w", err)
 	}
 
+	return s.buildEventListResponses(events), nil
+}
+
+func (s *EventService) GetAllEvents() ([]models.EventListResponse, error) {
+	events, err := s.eventRepo.FindAll(map[string]interface{}{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch all events: %w", err)
+	}
+
+	return s.buildEventListResponses(events), nil
+}
+
+func (s *EventService) buildEventListResponses(events []models.Event) []models.EventListResponse {
 	responses := make([]models.EventListResponse, 0, len(events))
 	for _, event := range events {
 		reservedCount, _ := s.reservationRepo.CountByEvent(event.ID)
@@ -63,7 +76,7 @@ func (s *EventService) GetActiveEvents() ([]models.EventListResponse, error) {
 		})
 	}
 
-	return responses, nil
+	return responses
 }
 
 func (s *EventService) GetEventByID(id uuid.UUID) (*models.Event, error) {

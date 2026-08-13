@@ -17,6 +17,11 @@ const eventService = {
   },
 
   // Admin
+  getAdminEvents: async () => {
+    const response = await api.get('/admin/events');
+    return response.data;
+  },
+
   createEvent: async (data) => {
     const response = await api.post('/admin/events', data);
     return response.data;

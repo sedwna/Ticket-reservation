@@ -36,6 +36,23 @@ func (h *EventHandler) GetActiveEvents(c *gin.Context) {
 	utils.Success(c, http.StatusOK, events)
 }
 
+// GetAllEvents godoc
+// @Summary Get all events for management (Admin)
+// @Tags admin-events
+// @Produce json
+// @Success 200 {object} utils.APIResponse
+// @Security BearerAuth
+// @Router /api/v1/admin/events [get]
+func (h *EventHandler) GetAllEvents(c *gin.Context) {
+	events, err := h.eventService.GetAllEvents()
+	if err != nil {
+		utils.InternalError(c, "خطا در دریافت فهرست کامل رویدادها")
+		return
+	}
+
+	utils.Success(c, http.StatusOK, events)
+}
+
 // GetEventByID godoc
 // @Summary Get event details
 // @Tags events

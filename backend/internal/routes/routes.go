@@ -82,6 +82,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		admin.Use(middleware.AdminMiddleware())
 		{
 			// Event management
+			admin.GET("/events", eventHandler.GetAllEvents)
 			admin.POST("/events", eventHandler.CreateEvent)
 			admin.PUT("/events/:id", eventHandler.UpdateEvent)
 			admin.DELETE("/events/:id", eventHandler.DeleteEvent)

@@ -14,10 +14,18 @@ import Button from '../../components/common/Button';
 import { TableSkeleton } from '../../components/common/LoadingSkeleton';
 
 const DEFAULT_ROW = { seats: 10, seat_type: 'REGULAR' };
+const EVENT_STATUS_OPTIONS = [
+  { value: '', label: 'همه وضعیت‌ها' },
+  { value: 'ACTIVE', label: 'فعال' },
+  { value: 'CLOSED', label: 'پایان ثبت‌نام' },
+  { value: 'COMPLETED', label: 'برگزار شده' },
+  { value: 'CANCELLED', label: 'لغو شده' },
+];
 
 export default function EventManagementPage() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [formModal, setFormModal] = useState(false);
@@ -44,10 +52,13 @@ export default function EventManagementPage() {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const response = await eventService.getActiveEvents();
-      if (response.success) setEvents(response.data || []);
-    } catch {
+      setLoadError('');
+      const response = await eventService.getAdminEvents();
+      if (!response.success) throw new Error(response.message || 'خطا در دریافت رویدادها');
+      setEvents(response.data || []);
+    } catch (error) {
       setEvents([]);
+      setLoadError(error.response?.data?.message || error.message || 'ارتباط با سرور برقرار نشد');
     } finally {
       setLoading(false);
     }
@@ -180,11 +191,19 @@ export default function EventManagementPage() {
     finally { setDeleting(false); }
   };
 
-  const filtered = events.filter(e => {
-    if (search && !e.title.includes(search)) return false;
-    if (statusFilter && e.status !== statusFilter) return false;
-    return true;
-  });
+  const normalizedSearch = search.trim().toLocaleLowerCase('fa-IR');
+  const searchMatchedEvents = events.filter((event) => (
+    !normalizedSearch
+    || String(event.title || '').toLocaleLowerCase('fa-IR').includes(normalizedSearch)
+  ));
+  const statusCounts = searchMatchedEvents.reduce((counts, event) => {
+    counts[event.status] = (counts[event.status] || 0) + 1;
+    return counts;
+  }, {});
+  const filtered = statusFilter
+    ? searchMatchedEvents.filter((event) => event.status === statusFilter)
+    : searchMatchedEvents;
+  const selectedStatusLabel = EVENT_STATUS_OPTIONS.find((option) => option.value === statusFilter)?.label;
 
   const totalCap = useLegacy ? legacyRows * legacySeats : calcCapacity(rows);
   const vipCount = useLegacy ? 0 : rows.filter(r => r.seat_type === 'VIP').reduce((s, r) => s + (parseInt(r.seats) || 0), 0);
@@ -203,19 +222,46 @@ export default function EventManagementPage() {
           </Button>
         </div>
 
-        <div className="bg-surface-card rounded-2xl border border-line p-4 mb-6 flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <MagnifyingGlassIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-faint" />
-            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="جستجو..." className="input-field !pr-10" />
+        <div className="bg-surface-card rounded-2xl border border-line p-4 mb-6 space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <MagnifyingGlassIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-faint" />
+              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="جستجو در عنوان رویدادها..." className="input-field !pr-10" />
+            </div>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input-field sm:w-52" aria-label="فیلتر وضعیت رویداد">
+              {EVENT_STATUS_OPTIONS.map((option) => (
+                <option key={option.value || 'ALL'} value={option.value}>
+                  {option.label} ({(option.value ? statusCounts[option.value] || 0 : searchMatchedEvents.length).toLocaleString('fa-IR')})
+                </option>
+              ))}
+            </select>
           </div>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input-field sm:w-40">
-            <option value="">همه</option><option value="ACTIVE">فعال</option><option value="CLOSED">پایان ثبت‌نام</option><option value="COMPLETED">برگزار شده</option><option value="CANCELLED">لغو شده</option>
-          </select>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line/70 pt-3 text-xs text-ink-muted" role="status" aria-live="polite">
+            <span>
+              نمایش <strong className="text-ink-strong">{filtered.length.toLocaleString('fa-IR')}</strong> رویداد
+              {searchMatchedEvents.length !== events.length && ` از ${events.length.toLocaleString('fa-IR')} رویداد`}
+            </span>
+            {statusFilter && (
+              <button type="button" onClick={() => setStatusFilter('')} className="rounded-lg border border-line-strong px-2.5 py-1 text-brand-accent transition-colors hover:border-brand-400 hover:bg-brand-soft">
+                فیلتر فعال: {selectedStatusLabel} — پاک کردن
+              </button>
+            )}
+          </div>
         </div>
 
         {loading && <TableSkeleton rows={6} cols={7} />}
-        {!loading && filtered.length === 0 && <EmptyState title="رویدادی یافت نشد" />}
-        {!loading && filtered.length > 0 && (
+        {!loading && loadError && (
+          <EmptyState title="دریافت رویدادها ناموفق بود" description={loadError} />
+        )}
+        {!loading && !loadError && filtered.length === 0 && (
+          <EmptyState
+            title={statusFilter ? `رویداد «${selectedStatusLabel}» یافت نشد` : 'رویدادی یافت نشد'}
+            description={statusFilter
+              ? 'در حال حاضر رویدادی با این وضعیت ثبت نشده است. می‌توانید فیلتر را پاک کنید.'
+              : 'عبارت جستجو را تغییر دهید یا فیلترها را پاک کنید.'}
+          />
+        )}
+        {!loading && !loadError && filtered.length > 0 && (
           <div className="card overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
