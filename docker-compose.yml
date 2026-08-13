@@ -33,12 +33,20 @@ services:
       DB_SSLMODE: disable
       JWT_SECRET: ticket-reservation-secret-key-2025
       JWT_EXPIRY_HOURS: "24"
+      EMAIL_DOMAIN_CHECK: "true"
+      EMAIL_DNS_TIMEOUT_SECONDS: "4"
       GIN_MODE: release
     ports:
       - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
     restart: unless-stopped
 
   # React Frontend
@@ -50,7 +58,14 @@ services:
     ports:
       - "3000:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
     restart: unless-stopped
 
 volumes:

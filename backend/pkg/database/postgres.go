@@ -50,8 +50,87 @@ func Migrate(db *gorm.DB) error {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 
+	if err := migrateEmailIntegrity(db); err != nil {
+		return fmt.Errorf("failed to migrate email integrity: %w", err)
+	}
+
 	log.Println("Database migrations completed successfully")
 	return nil
+}
+
+const databaseEmailPredicate = `
+	LENGTH(email) BETWEEN 3 AND 254
+	AND email = LOWER(BTRIM(email))
+	AND email NOT LIKE '%..%'
+	AND LENGTH(SPLIT_PART(email, '@', 1)) <= 64
+	AND email ~ '^[a-z0-9.!#$%&''*+/=?^_{|}~-]+@[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$'`
+
+func migrateEmailIntegrity(db *gorm.DB) error {
+	var duplicateGroups int64
+	if err := db.Raw(`
+		SELECT COUNT(*)
+		FROM (
+			SELECT LOWER(BTRIM(email)) AS normalized_email
+			FROM users
+			GROUP BY LOWER(BTRIM(email))
+			HAVING COUNT(*) > 1
+		) duplicates
+	`).Scan(&duplicateGroups).Error; err != nil {
+		return err
+	}
+	if duplicateGroups > 0 {
+		return fmt.Errorf("found %d case-insensitive duplicate email group(s); resolve them before starting the server", duplicateGroups)
+	}
+
+	if err := db.Exec(`
+		UPDATE users
+		SET email = LOWER(BTRIM(email)), updated_at = NOW()
+		WHERE email <> LOWER(BTRIM(email))
+	`).Error; err != nil {
+		return err
+	}
+
+	if err := db.Exec(`
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_normalized
+		ON users (LOWER(email))
+	`).Error; err != nil {
+		return err
+	}
+
+	var invalidLegacyUsers int64
+	if err := db.Raw(`SELECT COUNT(*) FROM users WHERE NOT (` + databaseEmailPredicate + `)`).Scan(&invalidLegacyUsers).Error; err != nil {
+		return err
+	}
+	if invalidLegacyUsers > 0 {
+		if err := db.Exec(`UPDATE users SET is_active = FALSE WHERE NOT (` + databaseEmailPredicate + `)`).Error; err != nil {
+			return err
+		}
+		log.Printf("Warning: deactivated %d legacy user(s) with invalid email structure", invalidLegacyUsers)
+	}
+
+	constraintSQL := `
+		DO $$
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1
+				FROM pg_constraint
+				WHERE conname = 'users_email_integrity_check'
+				  AND conrelid = 'users'::regclass
+			) THEN
+				ALTER TABLE users
+				ADD CONSTRAINT users_email_integrity_check
+				CHECK (` + databaseEmailPredicate + `) NOT VALID;
+			END IF;
+		END $$;
+	`
+	if err := db.Exec(constraintSQL).Error; err != nil {
+		return err
+	}
+	if invalidLegacyUsers > 0 {
+		return nil
+	}
+
+	return db.Exec(`ALTER TABLE users VALIDATE CONSTRAINT users_email_integrity_check`).Error
 }
 
 func SeedAdmin(db *gorm.DB) error {
@@ -62,13 +141,13 @@ func SeedAdmin(db *gorm.DB) error {
 	}
 
 	admin := &models.User{
-		StudentID:   "ADMIN001",
-		FirstName:   "مدیر",
-		LastName:    "سامانه",
-		Email:       "admin@basu.ac.ir",
+		StudentID:    "ADMIN001",
+		FirstName:    "مدیر",
+		LastName:     "سامانه",
+		Email:        "admin@basu.ac.ir",
 		PasswordHash: "$2a$10$dummyhashwillbesetproperly",
-		Role:        "ADMIN",
-		IsActive:    true,
+		Role:         "ADMIN",
+		IsActive:     true,
 	}
 
 	// Set proper password hash for "REMOVED_SECRET"

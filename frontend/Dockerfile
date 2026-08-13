@@ -7,6 +7,7 @@ RUN npm ci --include=dev --no-audit --no-fund
 
 COPY . .
 
+RUN npm run lint
 RUN npm run build
 
 FROM nginx:alpine

@@ -5,21 +5,16 @@ WORKDIR /app
 ENV GOPROXY=https://goproxy.cn
 ENV GOSUMDB=off
 
-# Install git for go module VCS operations
-RUN apk update && apk add --no-cache git
+RUN apk add --no-cache git
 
-# Copy go.mod and source first, then download deps
-COPY go.mod ./
+# Download dependencies in a cacheable Docker layer.
+COPY go.mod go.sum ./
+RUN go mod download
+
 COPY . .
 
-# Download dependencies inside Docker (may route differently than host)
-RUN go env -w GOPROXY=https://goproxy.cn && \
-    go env -w GOSUMDB=off && \
-    go env GOPROXY GOSUMDB && \
-    GOPROXY=https://goproxy.cn GOSUMDB=off go mod tidy && \
-    GOPROXY=https://goproxy.cn GOSUMDB=off go mod download
-
-RUN CGO_ENABLED=0 GOOS=linux go build -o /server ./cmd/server
+RUN go test ./...
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /server ./cmd/server
 
 FROM alpine:3.19
 

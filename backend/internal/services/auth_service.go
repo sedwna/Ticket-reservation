@@ -1,8 +1,11 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -14,15 +17,30 @@ import (
 )
 
 type AuthService struct {
-	userRepo *repository.UserRepository
-	config   *config.Config
+	userRepo       *repository.UserRepository
+	config         *config.Config
+	emailValidator *utils.EmailValidator
 }
 
 func NewAuthService(userRepo *repository.UserRepository, cfg *config.Config) *AuthService {
-	return &AuthService{userRepo: userRepo, config: cfg}
+	return &AuthService{
+		userRepo: userRepo,
+		config:   cfg,
+		emailValidator: utils.NewEmailValidator(
+			cfg.EmailDomainCheck,
+			cfg.EmailAllowedDomains,
+			time.Duration(cfg.EmailDNSTimeoutSeconds)*time.Second,
+		),
+	}
 }
 
-func (s *AuthService) Register(req *models.RegisterRequest) (*models.UserResponse, error) {
+func (s *AuthService) Register(ctx context.Context, req *models.RegisterRequest) (*models.UserResponse, error) {
+	normalizedEmail, err := s.emailValidator.Validate(ctx, req.Email)
+	if err != nil {
+		return nil, err
+	}
+	req.Email = normalizedEmail
+
 	// Check if email already exists
 	existingUser, _ := s.userRepo.FindByEmail(req.Email)
 	if existingUser != nil {
@@ -57,6 +75,7 @@ func (s *AuthService) Register(req *models.RegisterRequest) (*models.UserRespons
 }
 
 func (s *AuthService) Login(req *models.LoginRequest) (string, *models.UserResponse, error) {
+	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
 	user, err := s.userRepo.FindByEmail(req.Email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -110,7 +129,7 @@ type UpdateProfileRequest struct {
 	Email     string `json:"email"`
 }
 
-func (s *AuthService) UpdateProfile(userID uuid.UUID, req *UpdateProfileRequest) (*models.User, error) {
+func (s *AuthService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *UpdateProfileRequest) (*models.User, error) {
 	user, err := s.userRepo.FindByID(userID)
 	if err != nil {
 		return nil, errors.New("کاربر یافت نشد")
@@ -122,12 +141,18 @@ func (s *AuthService) UpdateProfile(userID uuid.UUID, req *UpdateProfileRequest)
 	if req.LastName != "" {
 		user.LastName = req.LastName
 	}
-	if req.Email != "" && req.Email != user.Email {
-		existing, _ := s.userRepo.FindByEmail(req.Email)
-		if existing != nil {
-			return nil, errors.New("این ایمیل قبلاً استفاده شده است")
+	if req.Email != "" {
+		normalizedEmail, validationErr := s.emailValidator.Validate(ctx, req.Email)
+		if validationErr != nil {
+			return nil, validationErr
 		}
-		user.Email = req.Email
+		if normalizedEmail != user.Email {
+			existing, _ := s.userRepo.FindByEmail(normalizedEmail)
+			if existing != nil {
+				return nil, errors.New("این ایمیل قبلاً استفاده شده است")
+			}
+			user.Email = normalizedEmail
+		}
 	}
 
 	if err := s.userRepo.Update(user); err != nil {

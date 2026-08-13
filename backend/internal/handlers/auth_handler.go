@@ -35,7 +35,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	user, err := h.authService.Register(&req)
+	user, err := h.authService.Register(c.Request.Context(), &req)
 	if err != nil {
 		utils.BadRequest(c, err.Error())
 		return
@@ -132,7 +132,7 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	user, err := h.authService.UpdateProfile(userID, &req)
+	user, err := h.authService.UpdateProfile(c.Request.Context(), userID, &req)
 	if err != nil {
 		utils.BadRequest(c, err.Error())
 		return

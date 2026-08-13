@@ -13,7 +13,7 @@ type User struct {
 	StudentID    string    `gorm:"type:varchar(20);uniqueIndex;not null" json:"student_id"`
 	FirstName    string    `gorm:"type:varchar(50);not null" json:"first_name"`
 	LastName     string    `gorm:"type:varchar(50);not null" json:"last_name"`
-	Email        string    `gorm:"type:varchar(100);uniqueIndex;not null" json:"email"`
+	Email        string    `gorm:"type:varchar(254);uniqueIndex;not null" json:"email"`
 	PasswordHash string    `gorm:"type:varchar(255);not null" json:"-"`
 	Role         string    `gorm:"type:varchar(10);default:USER;check:role IN ('ADMIN','USER')" json:"role"`
 	IsActive     bool      `gorm:"default:true" json:"is_active"`
@@ -21,8 +21,8 @@ type User struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 
 	// Relations
-	Reservations []Reservation `gorm:"foreignKey:UserID" json:"reservations,omitempty"`
-	CreatedEvents []Event      `gorm:"foreignKey:CreatedBy" json:"created_events,omitempty"`
+	Reservations  []Reservation `gorm:"foreignKey:UserID" json:"reservations,omitempty"`
+	CreatedEvents []Event       `gorm:"foreignKey:CreatedBy" json:"created_events,omitempty"`
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) error {

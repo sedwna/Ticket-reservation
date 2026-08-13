@@ -5,6 +5,7 @@ import authService from '../../services/authService';
 import toast from 'react-hot-toast';
 import Button from '../../components/common/Button';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { getEmailValidationError, normalizeEmail } from '../../utils/email';
 
 const strengthLabels = ['', 'ضعیف', 'متوسط', 'خوب', 'عالی'];
 const strengthColors = ['bg-surface-raised', 'bg-red-400', 'bg-amber-400', 'bg-emerald-400', 'bg-emerald-500'];
@@ -14,6 +15,7 @@ export default function RegisterPage() {
     student_id: '', first_name: '', last_name: '', email: '', password: '', password_confirm: '',
   });
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
@@ -23,8 +25,9 @@ export default function RegisterPage() {
     if (!form.first_name.trim()) return 'نام الزامی است';
     if (!form.last_name.trim()) return 'نام خانوادگی الزامی است';
     if (!form.student_id.trim()) return 'شماره دانشجویی الزامی است';
-    if (!form.email.trim()) return 'ایمیل الزامی است';
-    if (!/\S+@\S+\.\S+/.test(form.email)) return 'فرمت ایمیل نامعتبر است';
+    const currentEmailError = getEmailValidationError(form.email);
+    setEmailError(currentEmailError);
+    if (currentEmailError) return currentEmailError;
     if (!form.password) return 'رمز عبور الزامی است';
     if (form.password.length < 8) return 'رمز عبور باید حداقل ۸ کاراکتر باشد';
     if (form.password !== form.password_confirm) return 'رمز عبور و تکرار آن یکسان نیستند';
@@ -48,7 +51,7 @@ export default function RegisterPage() {
     try {
       const response = await authService.register({
         student_id: form.student_id, first_name: form.first_name,
-        last_name: form.last_name, email: form.email, password: form.password,
+        last_name: form.last_name, email: normalizeEmail(form.email), password: form.password,
       });
       if (response.success) {
         toast.success('ثبت‌نام با موفقیت انجام شد');
@@ -57,7 +60,9 @@ export default function RegisterPage() {
         toast.error(response.message || 'خطا در ثبت‌نام');
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'خطا در ارتباط با سرور');
+      const message = err.response?.data?.message || 'خطا در ارتباط با سرور';
+      if (message.includes('ایمیل') || message.includes('دامنه')) setEmailError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -111,8 +116,25 @@ export default function RegisterPage() {
             <div>
               <label className="block text-sm font-medium text-ink mb-1">ایمیل *</label>
               <input type="email" value={form.email}
-                onChange={(e) => setForm({...form, email: e.target.value})}
-                className="input-field ltr text-left" dir="ltr" placeholder="example@basu.ac.ir" />
+                onChange={(e) => {
+                  setForm({...form, email: e.target.value});
+                  setEmailError('');
+                }}
+                onBlur={() => {
+                  const error = getEmailValidationError(form.email);
+                  setEmailError(error);
+                  if (!error) setForm((current) => ({ ...current, email: normalizeEmail(current.email) }));
+                }}
+                className={`input-field ltr text-left ${emailError ? 'border-red-300 focus:ring-red-500/30' : ''}`}
+                dir="ltr"
+                placeholder="example@basu.ac.ir"
+                autoComplete="email"
+                maxLength={254}
+                aria-invalid={Boolean(emailError)}
+                aria-describedby={emailError ? 'register-email-error' : undefined}
+              />
+              {emailError && <p id="register-email-error" className="text-red-500 text-xs mt-1">{emailError}</p>}
+              <p className="text-xs text-ink-faint mt-1">اعتبار دامنه ایمیل نیز هنگام ثبت‌نام بررسی می‌شود.</p>
             </div>
 
             <div>

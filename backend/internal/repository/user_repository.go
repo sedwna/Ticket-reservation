@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"strings"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
@@ -30,7 +32,8 @@ func (r *UserRepository) FindByID(id uuid.UUID) (*models.User, error) {
 
 func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
 	var user models.User
-	err := r.db.Where("email = ?", email).First(&user).Error
+	normalizedEmail := strings.ToLower(strings.TrimSpace(email))
+	err := r.db.Where("LOWER(email) = ?", normalizedEmail).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
