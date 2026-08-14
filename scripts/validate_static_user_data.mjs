@@ -108,15 +108,13 @@ if (!Array.isArray(generatedUsers) || generatedUsers.length !== 80) {
   checkUnique(generatedUsers.map((user) => user.student_id), 'scripts/seed.js', 'student ID');
 }
 
-const databaseSource = await readFile(resolve(projectRoot, 'backend/pkg/database/postgres.go'), 'utf8');
-const adminStudentID = databaseSource.match(/defaultAdminStudentID\s*=\s*"([^"]+)"/)?.[1]
-  ?? databaseSource.match(/StudentID:\s+"([^"]+)"/)?.[1];
-const adminEmail = databaseSource.match(/defaultAdminEmail\s*=\s*"([^"]+)"/)?.[1]
-  ?? databaseSource.match(/Email:\s+"([^"]+)"/)?.[1];
-if (!adminStudentID) errors.push('backend/pkg/database/postgres.go: default admin student ID not found');
-else checkStudentID(adminStudentID, 'backend default admin');
-if (!adminEmail) errors.push('backend/pkg/database/postgres.go: default admin email not found');
-else checkEmail(adminEmail, 'backend default admin');
+const exampleEnvironment = await readFile(resolve(projectRoot, 'backend/.env.example'), 'utf8');
+const adminStudentID = exampleEnvironment.match(/^DEMO_ADMIN_STUDENT_ID=(.+)$/m)?.[1]?.trim();
+const adminEmail = exampleEnvironment.match(/^DEMO_ADMIN_EMAIL=(.+)$/m)?.[1]?.trim();
+if (!adminStudentID) errors.push('backend/.env.example: demo admin student ID not found');
+else checkStudentID(adminStudentID, 'demo admin example');
+if (!adminEmail) errors.push('backend/.env.example: demo admin email not found');
+else checkEmail(adminEmail, 'demo admin example');
 
 if (errors.length > 0) {
   console.error(errors.join('\n'));

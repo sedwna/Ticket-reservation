@@ -19,9 +19,10 @@ try {
     }
 
     Write-Host "Full dataset imported and validated successfully." -ForegroundColor Green
-    Write-Host "Admin: ticket.reservation.demo+full.user001@gmail.com / REMOVED_SECRET"
-    Write-Host "Active user: ticket.reservation.demo+full.user051@gmail.com / REMOVED_SECRET"
-    Write-Host "Inactive user: ticket.reservation.demo+full.user171@gmail.com / REMOVED_SECRET"
+    Write-Host "Admin: ticket.reservation.demo+full.user001@gmail.com"
+    Write-Host "Active user: ticket.reservation.demo+full.user051@gmail.com"
+    Write-Host "Inactive user: ticket.reservation.demo+full.user171@gmail.com"
+    Write-Host "Passwords are read from DEMO_DATA_PASSWORD in the local .env file."
 }
 finally {
     Pop-Location

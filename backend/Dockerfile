@@ -1,9 +1,6 @@
-FROM golang:1.21-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 WORKDIR /app
-
-ENV GOPROXY=https://goproxy.cn
-ENV GOSUMDB=off
 
 RUN apk add --no-cache git
 
@@ -16,7 +13,7 @@ COPY . .
 RUN go test ./...
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /server ./cmd/server
 
-FROM alpine:3.19
+FROM alpine:3.22
 
 RUN apk --no-cache add ca-certificates tzdata
 ENV TZ=Asia/Tehran

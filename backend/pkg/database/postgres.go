@@ -222,15 +222,9 @@ func migrateEmailIntegrity(db *gorm.DB) error {
 	return db.Exec(`ALTER TABLE users VALIDATE CONSTRAINT users_email_integrity_check`).Error
 }
 
-func SeedAdmin(db *gorm.DB) error {
-	const (
-		defaultAdminStudentID = "4000000001"
-		defaultAdminEmail     = "ticket.reservation.demo+system-admin@gmail.com"
-		defaultAdminPassword  = "REMOVED_SECRET"
-	)
-
+func SeedAdmin(db *gorm.DB, cfg *config.Config) error {
 	var existingAdmin models.User
-	err := db.Where("LOWER(email) = ?", defaultAdminEmail).First(&existingAdmin).Error
+	err := db.Where("LOWER(email) = ?", cfg.DemoAdminEmail).First(&existingAdmin).Error
 	if err == nil {
 		return nil
 	}
@@ -239,17 +233,17 @@ func SeedAdmin(db *gorm.DB) error {
 	}
 
 	admin := &models.User{
-		StudentID:    defaultAdminStudentID,
+		StudentID:    cfg.DemoAdminStudentID,
 		FirstName:    "مدیر",
 		LastName:     "سامانه",
-		Email:        defaultAdminEmail,
+		Email:        cfg.DemoAdminEmail,
 		PasswordHash: "$2a$10$dummyhashwillbesetproperly",
 		Role:         "ADMIN",
 		IsActive:     true,
 	}
 
 	admin.PasswordHash = ""
-	if err := admin.SetPassword(defaultAdminPassword); err != nil {
+	if err := admin.SetPassword(cfg.DemoAdminPassword); err != nil {
 		return fmt.Errorf("failed to hash default admin password: %w", err)
 	}
 
@@ -257,6 +251,6 @@ func SeedAdmin(db *gorm.DB) error {
 		return fmt.Errorf("failed to seed admin user: %w", err)
 	}
 
-	log.Printf("Admin user seeded successfully (%s / %s)", defaultAdminEmail, defaultAdminPassword)
+	log.Printf("Demo admin user seeded successfully (%s)", cfg.DemoAdminEmail)
 	return nil
 }

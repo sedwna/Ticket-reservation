@@ -79,7 +79,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		// Admin routes (require admin role)
 		admin := v1.Group("/admin")
 		admin.Use(middleware.AuthMiddleware(cfg.JWTSecret))
-		admin.Use(middleware.AdminMiddleware())
+		admin.Use(middleware.AdminMiddleware(userRepo))
 		{
 			// Event management
 			admin.GET("/events", eventHandler.GetAllEvents)

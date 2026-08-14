@@ -13,7 +13,7 @@ import (
 )
 
 // @title Ticket Reservation System API
-// @version 1.0
+// @version 5.7.1
 // @description API for Seat Reservation System - Bu-Ali Sina University Amphitheater
 // @host localhost:8080
 // @BasePath /api/v1
@@ -40,9 +40,11 @@ func main() {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
-	// Seed admin user
-	if err := database.SeedAdmin(db); err != nil {
-		log.Printf("Warning: Failed to seed admin user: %v", err)
+	// Seed the optional demo administrator only in explicit demo mode.
+	if cfg.DemoMode {
+		if err := database.SeedAdmin(db, cfg); err != nil {
+			log.Fatalf("Failed to seed demo admin user: %v", err)
+		}
 	}
 
 	// Setup Gin router
@@ -55,7 +57,7 @@ func main() {
 	r := gin.Default()
 
 	// Apply CORS middleware
-	r.Use(middleware.CORSMiddleware())
+	r.Use(middleware.CORSMiddleware(cfg.CORSAllowedOrigins))
 
 	// Setup routes
 	routes.SetupRoutes(r, db, cfg)

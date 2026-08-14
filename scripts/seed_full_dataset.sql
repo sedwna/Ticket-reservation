@@ -1,9 +1,15 @@
 \set ON_ERROR_STOP on
 
+\if :{?demo_password}
+\else
+\echo 'demo_password must be supplied with psql -v demo_password=...'
+\quit 3
+\endif
+
 -- Full synthetic production-like dataset for Ticket Reservation System.
 -- All identities are fictional. Every email and student ID satisfies the app rules.
 -- DATASET_COUNTS users=220 events_per_status=50 active_reservations=1000 completed_reservations=500 cancelled_reservations=500 audit_per_action=50
--- Password for every dataset account: REMOVED_SECRET
+-- The password is supplied at runtime through the psql demo_password variable.
 -- Safe to run repeatedly: only records owned by this deterministic dataset are replaced.
 
 BEGIN;
@@ -77,7 +83,7 @@ WITH name_lists AS (
             'سلیمانی','خلیلی','بهرامی','رستمی','حیدری','علوی','نصیری','کمالی','شمس','آقایی'
         ]::TEXT[] AS last_names
 ), password_seed AS (
-    SELECT crypt('REMOVED_SECRET', gen_salt('bf', 10)) AS password_hash
+    SELECT crypt(:'demo_password', gen_salt('bf', 10)) AS password_hash
 ), user_source AS (
     SELECT
         i,
@@ -511,9 +517,8 @@ ORDER BY feature;
 
 SELECT
     'مدیر دیتاست' AS account,
-    'ticket.reservation.demo+full.user001@gmail.com' AS email,
-    'REMOVED_SECRET' AS password
+    'ticket.reservation.demo+full.user001@gmail.com' AS email
 UNION ALL
-SELECT 'کاربر فعال', 'ticket.reservation.demo+full.user051@gmail.com', 'REMOVED_SECRET'
+SELECT 'کاربر فعال', 'ticket.reservation.demo+full.user051@gmail.com'
 UNION ALL
-SELECT 'کاربر غیرفعال', 'ticket.reservation.demo+full.user171@gmail.com', 'REMOVED_SECRET';
+SELECT 'کاربر غیرفعال', 'ticket.reservation.demo+full.user171@gmail.com';

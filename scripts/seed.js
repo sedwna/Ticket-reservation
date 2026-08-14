@@ -17,6 +17,9 @@ function makeRowConfig(capacity) {
 
 const NUM_EVENTS = 25;
 const NUM_USERS = 80;
+const demoDataPassword = process.env.DEMO_DATA_PASSWORD || '';
+const demoAdminEmail = process.env.DEMO_ADMIN_EMAIL || '';
+const demoAdminPassword = process.env.DEMO_ADMIN_PASSWORD || '';
 
 const sampleTitles = [
   'سمینار هوش مصنوعی در پژوهش‌های نوین', 'کارگاه عملی توسعه وب مدرن', 'جلسه دفاع پایان‌نامه‌های منتخب', 'جشن روز دانشجو',
@@ -60,7 +63,7 @@ const usersToCreate = Array.from({ length: NUM_USERS }).map((_, i) => {
     first_name: fn.p,
     last_name: ln.p,
     email,
-    password: `UserPass!${(i+1)}`,
+    password: demoDataPassword,
   };
 });
 
@@ -106,6 +109,10 @@ function request(opts, data) {
 }
 
 async function main() {
+  if (demoDataPassword.length < 12 || !demoAdminEmail || demoAdminPassword.length < 12) {
+    throw new Error('DEMO_DATA_PASSWORD, DEMO_ADMIN_EMAIL, and DEMO_ADMIN_PASSWORD must be configured securely');
+  }
+
   console.log('Seeding users...');
   for (const u of usersToCreate) {
     try {
@@ -118,7 +125,7 @@ async function main() {
   // Login admin
   let adminToken;
   try {
-    const loginResp = await request({ method: 'POST', path: '/api/v1/auth/login' }, { email: 'ticket.reservation.demo+system-admin@gmail.com', password: 'REMOVED_SECRET' });
+    const loginResp = await request({ method: 'POST', path: '/api/v1/auth/login' }, { email: demoAdminEmail, password: demoAdminPassword });
     adminToken = loginResp.data.token;
     console.log('Admin logged in.');
   } catch (e) { console.error('Admin login failed — ensure backend running and migrations executed.'); throw e; }
