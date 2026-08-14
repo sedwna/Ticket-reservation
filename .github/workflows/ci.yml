@@ -75,7 +75,11 @@ jobs:
       - name: Reject committed secrets and generated files
         shell: bash
         run: |
-          if git grep -n -E 'REMOVED_SECRET|REMOVED_SECRET|REMOVED_SECRET|REMOVED_SECRET'; then
+          jwt_prefix='super_secret_key_'
+          admin_prefix='admin'
+          demo_prefix='Demo@'
+          database_prefix='amphi_'
+          if git grep -n -E "${jwt_prefix}123|${admin_prefix}123|${demo_prefix}123|${database_prefix}pass"; then
             echo 'Known credentials are present in the repository.' >&2
             exit 1
           fi
