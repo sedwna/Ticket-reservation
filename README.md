@@ -1,72 +1,193 @@
-# سامانه رزرو صندلی سالن آمفی‌تئاتر
+<div align="center">
+  <img src="./docs/readme-banner.svg" width="100%" alt="Amphi Seat — سامانه رزرو صندلی آمفی‌تئاتر" />
 
-**Seat Reservation System - Amphi Theater of Faculty of Engineering, Bu-Ali Sina University**
+  <h1>🎟️ سامانه هوشمند رزرو صندلی آمفی‌تئاتر</h1>
 
-## Overview
+  <p dir="rtl">یک راه ساده، منظم و عادلانه برای مدیریت همایش‌ها و برنامه‌های اصلی دانشگاه</p>
 
-A full-stack web application for online seat reservation in the university amphitheater. This system replaces the traditional manual process with a modern, secure, and user-friendly platform.
+  <p>
+    <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=06111F" alt="React 19" />
+    <img src="https://img.shields.io/badge/Go-1.21-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go 1.21" />
+    <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL 16" />
+    <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Ready" />
+    <img src="https://img.shields.io/badge/RTL-فارسی-F9C74F?style=for-the-badge" alt="Persian RTL" />
+  </p>
 
-### Tech Stack
+  <p>
+    <a href="#-چرا-این-سامانه"><b>چرا این سامانه؟</b></a>
+    · <a href="#-امکانات"><b>امکانات</b></a>
+    · <a href="#-شروع-سریع-با-docker"><b>شروع سریع</b></a>
+    · <a href="#-حسابهای-آماده-دمو"><b>حساب‌های دمو</b></a>
+    · <a href="#-دیتاست-کامل-آزمایشی"><b>دیتاست کامل</b></a>
+  </p>
+</div>
 
-| Layer     | Technology |
-|-----------|------------|
-| Frontend  | React 18, Vite, Tailwind CSS, Recharts |
-| Backend   | Go 1.21, Gin Framework, GORM |
-| Database  | PostgreSQL 16 |
-| Auth      | JWT + RBAC |
+---
 
-### Architecture
+## 🌱 این پروژه به چه درد می‌خورد؟
 
+<p dir="rtl" align="right">
+سلام بچه‌ها! این سامانه برای مدیریت همایش‌ها و برنامه‌های اصلی دانشگاه، مخصوصاً برنامه‌های آمفی‌تئاتر و سالن سرو طراحی شده؛ همان برنامه‌هایی که گاهی به‌خاطر شلوغی و بی‌نظمی، حق بعضی از دانشجوها ضایع می‌شود. دانشجو می‌تواند قبل از شروع برنامه، رویداد را ببیند و صندلی دلخواهش را آنلاین رزرو کند. به این ترتیب ورود و نشستن افراد منظم‌تر می‌شود، هرج‌ومرج کمتری پیش می‌آید و انجمن هم آمار دقیقی از شرکت‌کننده‌ها، صندلی‌ها و دانشجوهای فعال خواهد داشت.
+</p>
+
+<table dir="rtl">
+  <tr>
+    <td align="center" width="25%"><h3>⚖️ رزرو عادلانه</h3><p>هر دانشجو صندلی مشخص خودش را دارد؛ بدون صف و تصاحب سلیقه‌ای.</p></td>
+    <td align="center" width="25%"><h3>💺 انتخاب تصویری</h3><p>وضعیت صندلی‌ها زنده نمایش داده می‌شود و انتخاب فقط با چند کلیک انجام می‌شود.</p></td>
+    <td align="center" width="25%"><h3>🎭 مدیریت رویداد</h3><p>ساخت برنامه، چیدمان صندلی و کنترل ظرفیت از یک پنل واحد انجام می‌شود.</p></td>
+    <td align="center" width="25%"><h3>📊 آمار قابل استفاده</h3><p>انجمن می‌تواند مشارکت، ظرفیت و روند رزروها را دقیق‌تر بررسی کند.</p></td>
+  </tr>
+</table>
+
+## ✨ چرا این سامانه؟
+
+<div dir="rtl" align="right">
+
+- جلوگیری از شلوغی، صف‌های طولانی و بی‌نظمی پیش از شروع برنامه
+- حفظ حق دانشجوها با اختصاص یک صندلی مشخص به هر رزرو
+- مشخص شدن ظرفیت واقعی سالن و تعداد شرکت‌کننده‌ها پیش از اجرا
+- شناسایی دانشجوهای فعال با تکیه بر داده‌های معتبر سامانه
+- ساده‌تر شدن کار انجمن‌های علمی و فرهنگی در برنامه‌های پرتعداد
+- دسترسی به گزارش‌ها، نمودارها و فایل خروجی برای برنامه‌ریزی‌های بعدی
+
+</div>
+
+## 🧭 تجربه استفاده
+
+```mermaid
+flowchart LR
+    A[مشاهده رویداد] --> B[دیدن نقشه سالن]
+    B --> C[انتخاب صندلی]
+    C --> D[ثبت رزرو]
+    D --> E[مشاهده یا لغو رزرو]
 ```
-┌─────────────────────┐
-│   Presentation Layer │  ← React (Vite + Tailwind)
-├─────────────────────┤
-│   Business Logic     │  ← Go (Gin + GORM)
-├─────────────────────┤
-│   Data Layer         │  ← PostgreSQL
-└─────────────────────┘
+
+<p dir="rtl" align="center">
+مدیر سامانه هم‌زمان می‌تواند ظرفیت سالن، رزروها، کاربران و گزارش هر رویداد را از پنل مدیریت کنترل کند.
+</p>
+
+## 🚀 امکانات
+
+| بخش | قابلیت‌ها |
+|:---:|:---|
+| 👤 **دانشجو** | ثبت‌نام و ورود امن، مشاهده رویدادهای فعال، انتخاب صندلی از نقشه سالن، ثبت یا لغو رزرو و مشاهده سوابق |
+| 🪑 **صندلی‌ها** | نمایش زنده وضعیت آزاد، رزروشده و رزروشده توسط خود کاربر؛ پشتیبانی از صندلی عادی و VIP |
+| 🧑‍💼 **مدیر** | ساخت و ویرایش رویداد، تولید خودکار صندلی‌ها، مدیریت کاربران و نقش‌ها، فعال یا غیرفعال کردن حساب‌ها |
+| 📈 **گزارش‌ها** | آمار کلی، روند هفتگی رزرو، میزان اشغال سالن، گزارش هر رویداد و خروجی CSV |
+| 🔐 **امنیت** | JWT، سطح دسترسی مبتنی بر نقش، رمزنگاری رمز عبور، کنترل هم‌زمانی رزرو و ثبت عملیات مدیر |
+| 🌐 **تجربه کاربری** | رابط فارسی و راست‌چین، تاریخ شمسی، طراحی واکنش‌گرا و پیام‌های واضح |
+
+## 🧱 فناوری و معماری
+
+| لایه | فناوری | مسئولیت |
+|---|---|---|
+| رابط کاربری | React 19 · Vite 8 · Tailwind CSS · Recharts | صفحات دانشجو و مدیر، نقشه صندلی و نمودارها |
+| API | Go 1.21 · Gin · GORM | منطق کسب‌وکار، اعتبارسنجی، احراز هویت و گزارش‌ها |
+| داده | PostgreSQL 16 | کاربران، رویدادها، صندلی‌ها، رزروها و لاگ‌ها |
+| اجرا | Docker Compose | ساخت و اجرای یکپارچه سرویس‌ها و بررسی سلامت |
+
+```mermaid
+flowchart TB
+    UI[React + Vite] -->|REST API| API[Go + Gin]
+    API --> AUTH[JWT + RBAC]
+    API --> ORM[GORM]
+    ORM --> DB[(PostgreSQL)]
 ```
 
-## Quick Start
+## ⚡ شروع سریع با Docker
 
-### Prerequisites
+<p dir="rtl" align="right">
+برای اجرای پروژه فقط Docker Desktop لازم است. دستور زیر دیتابیس، بک‌اند و فرانت‌اند را می‌سازد و سرویس‌ها را با بررسی سلامت بالا می‌آورد:
+</p>
 
-- Docker & Docker Compose
-- Or: Go 1.21+, Node.js 20+, PostgreSQL 16
-
-### Using Docker (Recommended)
-
-```bash
-# Clone and start all services
-git clone <repo-url>
-cd Ticket-reservation
-docker-compose up -d
-
-# Access the application
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:8080
+```powershell
+docker compose up -d --build --force-recreate backend frontend
 ```
 
-### Manual Setup
+پس از آماده شدن سرویس‌ها:
 
-#### 1. Database
+| سرویس | نشانی |
+|---|---|
+| 🖥️ رابط کاربری | [http://localhost:3000](http://localhost:3000) |
+| ❤️ سلامت بک‌اند | [http://localhost:8080/health](http://localhost:8080/health) |
+| 🔌 نشانی پایه API | [http://localhost:8080/api/v1](http://localhost:8080/api/v1) |
 
-```bash
-# Create PostgreSQL database
-createdb ticket_reservation
-# Or use: docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=ticket_reservation postgres:16-alpine
+> [!NOTE]
+> نشانی اصلی پورت `8080` صفحه وب نیست؛ برای بررسی بک‌اند از مسیر `/health` و برای استفاده از سامانه از پورت `3000` استفاده کنید.
+
+## 🔑 حساب‌های آماده دمو
+
+<table dir="rtl">
+  <thead>
+    <tr><th>کاربرد</th><th>ایمیل</th><th>شماره دانشجویی</th><th>رمز عبور</th><th>زمان دسترسی</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>مدیر اصلی سامانه</td><td><code>ticket.reservation.demo+system-admin@gmail.com</code></td><td><code>4000000001</code></td><td><code>REMOVED_SECRET</code></td><td>همیشه پس از اجرای برنامه</td></tr>
+    <tr><td>مدیر دیتاست</td><td><code>ticket.reservation.demo+full.user001@gmail.com</code></td><td><code>4100000001</code></td><td><code>REMOVED_SECRET</code></td><td>پس از بارگذاری دیتاست کامل</td></tr>
+    <tr><td>دانشجوی فعال</td><td><code>ticket.reservation.demo+full.user051@gmail.com</code></td><td><code>4100000051</code></td><td><code>REMOVED_SECRET</code></td><td>پس از بارگذاری دیتاست کامل</td></tr>
+  </tbody>
+</table>
+
+> [!IMPORTANT]
+> همه این حساب‌ها آزمایشی هستند. اطلاعات دیتاست ساختگی اما معتبر است و به افراد واقعی تعلق ندارد.
+
+## 🗃️ دیتاست کامل آزمایشی
+
+<p dir="rtl" align="right">
+برای اینکه همه بخش‌های سامانه—از داشبورد و نمودارها تا وضعیت‌های مختلف رویداد و رزرو—واقعاً قابل آزمایش باشند، یک دیتاست بزرگ و کنترل‌شده در پروژه قرار دارد.
+</p>
+
+| داده | تعداد و پوشش |
+|---|---:|
+| 👥 کاربران | **220** نفر: 50 مدیر، 120 کاربر فعال و 50 کاربر غیرفعال |
+| 🎭 رویدادها | **200** رویداد: 50 فعال، 50 بسته، 50 تکمیل‌شده و 50 لغوشده |
+| 💺 صندلی‌ها | **22,400** صندلی: 3,200 VIP و 19,200 عادی |
+| 🎫 رزروها | **2,000** رزرو: 1,000 فعال، 500 تکمیل‌شده و 500 لغوشده |
+| 🧾 گزارش عملیات | **250** لاگ: حداقل 50 مورد برای هر عملیات اصلی مدیر |
+
+بارگذاری و اعتبارسنجی دیتاست:
+
+```powershell
+docker compose --profile seed run --rm full-data
 ```
 
-#### 2. Backend
+<p dir="rtl" align="right">
+فرایند ورود داده تراکنشی است؛ اگر تعداد رکوردها، ایمیل، شماره دانشجویی، وضعیت‌ها، تخصیص صندلی یا رزرو تکراری نامعتبر باشد، عملیات به‌صورت خودکار برگشت می‌خورد. اجرای دوباره این دستور هم امن است و فقط رکوردهای همین دیتاست را جایگزین می‌کند.
+</p>
+
+## ✅ قوانین اعتبارسنجی داده
+
+| فیلد | قانون |
+|---|---|
+| ایمیل | قالب معتبر و دامنه دقیق `gmail.com` |
+| شماره دانشجویی | فقط عدد و بین 10 تا 20 رقم |
+| رمز عبور | حداقل 8 نویسه |
+| مالکیت صندلی | هر صندلی در هر رویداد فقط یک رزرو فعال |
+| حساب کاربری | نقش و وضعیت فعال/غیرفعال معتبر |
+
+> بررسی قالب و دامنه ایمیل به‌تنهایی مالکیت واقعی صندوق ایمیل را ثابت نمی‌کند. برای محیط عملیاتی دانشگاه بهتر است تأیید ایمیل با کد یک‌بارمصرف و تطبیق شماره دانشجویی با مرجع رسمی دانشگاه اضافه شود.
+
+## 🧰 اجرای بدون Docker
+
+<details dir="rtl">
+  <summary><b>نمایش مراحل نصب دستی</b></summary>
+
+### پیش‌نیازها
+
+- Go 1.21 یا بالاتر
+- Node.js 20 یا بالاتر
+- PostgreSQL 16
+
+### بک‌اند
 
 ```bash
 cd backend
-cp .env.example .env  # Edit if needed
+cp .env.example .env
 go mod tidy
 go run cmd/server/main.go
 ```
 
-#### 3. Frontend
+### فرانت‌اند
 
 ```bash
 cd frontend
@@ -74,120 +195,77 @@ npm install
 npm run dev
 ```
 
-### Default Admin Account
+</details>
 
-- Email: `admin@basu.ac.ir`
-- Password: `REMOVED_SECRET`
+## 🔌 مسیرهای مهم API
 
-## API Endpoints
+<details dir="rtl">
+  <summary><b>نمایش Endpointها</b></summary>
 
-### Auth
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/auth/register` | Register new user |
-| POST | `/api/v1/auth/login` | Login |
-| POST | `/api/v1/auth/logout` | Logout |
-| PUT | `/api/v1/auth/change-password` | Change password |
+| بخش | متد | مسیر | کاربرد |
+|---|:---:|---|---|
+| احراز هویت | `POST` | `/api/v1/auth/register` | ثبت‌نام |
+| احراز هویت | `POST` | `/api/v1/auth/login` | ورود |
+| رویداد | `GET` | `/api/v1/events` | فهرست رویدادهای فعال |
+| صندلی | `GET` | `/api/v1/events/:id/seats` | نقشه صندلی‌های رویداد |
+| رزرو | `POST` | `/api/v1/reservations` | ثبت رزرو |
+| رزرو | `GET` | `/api/v1/reservations/my` | رزروهای کاربر |
+| رزرو | `DELETE` | `/api/v1/reservations/:id` | لغو رزرو |
+| مدیریت | `GET` | `/api/v1/admin/users` | مدیریت کاربران |
+| گزارش | `GET` | `/api/v1/admin/reports/stats` | آمار داشبورد |
+| گزارش | `GET` | `/api/v1/admin/reports/export` | خروجی CSV |
 
-### Events
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/events` | List active events |
-| GET | `/api/v1/events/:id` | Event details |
-| GET | `/api/v1/events/:id/seats` | Seat map |
+</details>
 
-### Reservations
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/reservations` | Create reservation |
-| GET | `/api/v1/reservations/my` | My reservations |
-| DELETE | `/api/v1/reservations/:id` | Cancel reservation |
+## 📁 ساختار پروژه
 
-### Admin
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/admin/events` | Create event |
-| PUT | `/api/v1/admin/events/:id` | Update event |
-| DELETE | `/api/v1/admin/events/:id` | Delete event |
-| GET | `/api/v1/admin/reservations` | All reservations |
-| GET | `/api/v1/admin/users` | All users |
-| PUT | `/api/v1/admin/users/:id/toggle-status` | Toggle user |
-| PUT | `/api/v1/admin/users/:id/change-role` | Change role |
-| GET | `/api/v1/admin/reports/stats` | Dashboard stats |
-| GET | `/api/v1/admin/reports/events/:id` | Event report |
-| GET | `/api/v1/admin/reports/export` | Export CSV |
+<details dir="rtl">
+  <summary><b>نمایش درخت پوشه‌ها</b></summary>
 
-## Features
-
-### User Features
-- Register & Login with JWT authentication
-- Browse active events with capacity progress bars
-- Interactive visual seat map with real-time status
-- Color-coded seats (available/reserved/reserved by you)
-- One-click seat reservation with concurrency control
-- View and cancel personal reservations
-- Reservation history
-
-### Admin Features
-- Dashboard with statistics (active events, today's reservations, total users)
-- Reservation trend chart (7 days)
-- Event CRUD management with auto seat generation
-- User management (toggle status, change roles)
-- Reports with bar/pie/line charts
-- CSV export for further analysis
-- Audit log for admin actions
-
-### Technical Highlights
-- Race condition prevention with SELECT FOR UPDATE
-- UUID primary keys for scalability
-- Layered architecture (Handler → Service → Repository → Database)
-- Proper error handling and validation
-- RTL support with Persian (Jalali) date display
-- Fully responsive design
-- Docker containerization
-
-## Project Structure
-
-```
+```text
 Ticket-reservation/
 ├── backend/
-│   ├── cmd/server/main.go         # Entry point
-│   ├── config/config.go            # Configuration
+│   ├── cmd/server/              # نقطه شروع API
+│   ├── config/                  # تنظیمات محیط
 │   ├── internal/
-│   │   ├── models/                 # Data models
-│   │   ├── repository/             # Database access layer
-│   │   ├── services/               # Business logic
-│   │   ├── handlers/               # HTTP handlers
-│   │   ├── middleware/             # Auth & CORS middleware
-│   │   └── routes/routes.go        # Route definitions
-│   ├── pkg/
-│   │   ├── database/               # DB connection
-│   │   └── utils/                  # JWT, response helpers
-│   └── migrations/                 # SQL migrations
+│   │   ├── handlers/            # کنترل درخواست‌های HTTP
+│   │   ├── services/            # منطق سامانه
+│   │   ├── repository/          # دسترسی به داده
+│   │   ├── models/              # مدل‌های پایگاه داده
+│   │   └── middleware/          # احراز هویت و CORS
+│   ├── migrations/              # مهاجرت‌های SQL
+│   └── pkg/                     # ابزارهای مشترک
 ├── frontend/
-│   ├── src/
-│   │   ├── components/             # Reusable components
-│   │   ├── pages/                  # Page components
-│   │   ├── services/               # API service layer
-│   │   ├── context/                # React context
-│   │   └── App.jsx                 # Main app with routing
-│   ├── index.html
-│   └── vite.config.js
+│   └── src/
+│       ├── components/          # اجزای قابل استفاده مجدد
+│       ├── pages/               # صفحات کاربر و مدیر
+│       ├── services/            # ارتباط با API
+│       └── context/             # وضعیت سراسری برنامه
+├── scripts/                     # اعتبارسنجی و دیتاست کامل
+├── docs/                        # فایل‌های تصویری مستندات
 ├── docker-compose.yml
 └── README.md
 ```
 
-## Security
+</details>
 
-- Passwords hashed with bcrypt
-- JWT tokens with configurable expiry
-- Role-based access control (RBAC)
-- SQL injection prevention via GORM
-- CORS policy configured for trusted origins
-- Input validation on both client and server
+## 🛡️ نکات فنی مهم
 
-## License
+<div dir="rtl" align="right">
 
-This project was developed as a university course project at Bu-Ali Sina University, Faculty of Engineering.
+- قفل‌گذاری دیتابیس برای جلوگیری از رزرو هم‌زمان یک صندلی
+- شناسه‌های UUID برای رکوردهای اصلی
+- معماری لایه‌ای `Handler → Service → Repository → Database`
+- ذخیره رمزهای عبور به‌صورت هش‌شده با bcrypt
+- توکن JWT و کنترل دسترسی بر اساس نقش کاربر
+- ثبت لاگ عملیات مهم مدیران
+- بررسی خودکار سلامت سرویس‌ها در Docker Compose
 
-**Developers:** Sajad Dehqan, Fatemeh Damavandi
+</div>
+
+---
+
+<div align="center" dir="rtl">
+  <h3>ساخته‌شده برای برنامه‌های منظم‌تر و فرصت برابرتر در دانشگاه 💙</h3>
+  <p>اگر این پروژه برای انجمن یا دانشگاه شما مفید است، آن را توسعه دهید و با بقیه به اشتراک بگذارید.</p>
+</div>

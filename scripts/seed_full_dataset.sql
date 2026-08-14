@@ -1,252 +1,519 @@
--- Comprehensive demo dataset for Ticket Reservation System
--- Password for every demo account: REMOVED_SECRET
--- Safe to run repeatedly: only records created by this dataset are replaced.
+\set ON_ERROR_STOP on
+
+-- Full synthetic production-like dataset for Ticket Reservation System.
+-- All identities are fictional. Every email and student ID satisfies the app rules.
+-- DATASET_COUNTS users=220 events_per_status=50 active_reservations=1000 completed_reservations=500 cancelled_reservations=500 audit_per_action=50
+-- Password for every dataset account: REMOVED_SECRET
+-- Safe to run repeatedly: only records owned by this deterministic dataset are replaced.
 
 BEGIN;
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- Remove the previous copy of this dataset, preserving user-created records.
+CREATE TEMP TABLE seed_expectations (
+    user_count INTEGER NOT NULL,
+    event_count INTEGER NOT NULL,
+    event_status_count INTEGER NOT NULL,
+    active_reservation_count INTEGER NOT NULL,
+    completed_reservation_count INTEGER NOT NULL,
+    cancelled_reservation_count INTEGER NOT NULL,
+    audit_per_action INTEGER NOT NULL
+) ON COMMIT DROP;
+
+INSERT INTO seed_expectations VALUES (220, 200, 50, 1000, 500, 500, 50);
+
+CREATE OR REPLACE FUNCTION pg_temp.coverage_uuid(seed_text TEXT)
+RETURNS UUID
+LANGUAGE SQL
+IMMUTABLE
+STRICT
+AS $$
+    SELECT (
+        substr(md5(seed_text), 1, 8) || '-' ||
+        substr(md5(seed_text), 9, 4) || '-' ||
+        substr(md5(seed_text), 13, 4) || '-' ||
+        substr(md5(seed_text), 17, 4) || '-' ||
+        substr(md5(seed_text), 21, 12)
+    )::uuid;
+$$;
+
+-- Remove only the previous copy of this dataset; user-created rows are preserved.
 DELETE FROM audit_logs
-WHERE id IN (
-  SELECT (substr(md5('demo-audit-' || i), 1, 8) || '-' ||
-          substr(md5('demo-audit-' || i), 9, 4) || '-' ||
-          substr(md5('demo-audit-' || i), 13, 4) || '-' ||
-          substr(md5('demo-audit-' || i), 17, 4) || '-' ||
-          substr(md5('demo-audit-' || i), 21, 12))::uuid
-  FROM generate_series(1, 25) AS g(i)
-);
+WHERE details->>'source' = 'full-coverage-dataset'
+   OR id IN (
+       SELECT pg_temp.coverage_uuid('coverage-audit-' || i)
+       FROM generate_series(1, 250) AS g(i)
+   );
 
 DELETE FROM reservations
 WHERE event_id IN (
-  SELECT (substr(md5('demo-event-' || i), 1, 8) || '-' || substr(md5('demo-event-' || i), 9, 4) || '-' ||
-          substr(md5('demo-event-' || i), 13, 4) || '-' || substr(md5('demo-event-' || i), 17, 4) || '-' ||
-          substr(md5('demo-event-' || i), 21, 12))::uuid
-  FROM generate_series(1, 25) AS g(i)
-)
-OR id IN (
-  SELECT (substr(md5(kind || i), 1, 8) || '-' || substr(md5(kind || i), 9, 4) || '-' ||
-          substr(md5(kind || i), 13, 4) || '-' || substr(md5(kind || i), 17, 4) || '-' ||
-          substr(md5(kind || i), 21, 12))::uuid
-  FROM (VALUES ('demo-active-reservation-'), ('demo-cancelled-reservation-')) AS k(kind)
-  CROSS JOIN generate_series(1, 25) AS g(i)
+    SELECT pg_temp.coverage_uuid('coverage-event-' || i)
+    FROM generate_series(1, 200) AS g(i)
 );
 
 DELETE FROM seats
 WHERE event_id IN (
-  SELECT (substr(md5('demo-event-' || i), 1, 8) || '-' || substr(md5('demo-event-' || i), 9, 4) || '-' ||
-          substr(md5('demo-event-' || i), 13, 4) || '-' || substr(md5('demo-event-' || i), 17, 4) || '-' ||
-          substr(md5('demo-event-' || i), 21, 12))::uuid
-  FROM generate_series(1, 25) AS g(i)
+    SELECT pg_temp.coverage_uuid('coverage-event-' || i)
+    FROM generate_series(1, 200) AS g(i)
 );
 
 DELETE FROM events
 WHERE id IN (
-  SELECT (substr(md5('demo-event-' || i), 1, 8) || '-' || substr(md5('demo-event-' || i), 9, 4) || '-' ||
-          substr(md5('demo-event-' || i), 13, 4) || '-' || substr(md5('demo-event-' || i), 17, 4) || '-' ||
-          substr(md5('demo-event-' || i), 21, 12))::uuid
-  FROM generate_series(1, 25) AS g(i)
+    SELECT pg_temp.coverage_uuid('coverage-event-' || i)
+    FROM generate_series(1, 200) AS g(i)
 );
 
--- 25 realistic users: 3 admins, 19 active users and 3 inactive users.
-WITH user_data(i, student_id, first_name, last_name, email, role, is_active) AS (
-  VALUES
-    (1,  'ADMIN1001', 'نگار',   'احمدی',       'negar.ahmadi@basu.ac.ir',       'ADMIN', true),
-    (2,  'ADMIN1002', 'امیرحسین','کریمی',       'amir.karimi@basu.ac.ir',         'ADMIN', true),
-    (3,  'ADMIN1003', 'مریم',    'جعفری',       'maryam.jafari@basu.ac.ir',       'ADMIN', true),
-    (4,  '99121001',  'علی',     'محمدی',       'ali.mohammadi@student.basu.ac.ir','USER', true),
-    (5,  '99121002',  'زهرا',    'حسینی',       'zahra.hosseini@student.basu.ac.ir','USER', true),
-    (6,  '99121003',  'محمد',    'رضایی',       'mohammad.rezaei@student.basu.ac.ir','USER', true),
-    (7,  '99121004',  'فاطمه',   'مرادی',       'fatemeh.moradi@student.basu.ac.ir','USER', true),
-    (8,  '99121005',  'سینا',    'اکبری',       'sina.akbari@student.basu.ac.ir', 'USER', true),
-    (9,  '99121006',  'سارا',    'قاسمی',       'sara.ghasemi@student.basu.ac.ir','USER', true),
-    (10, '99121007',  'رضا',     'صادقی',       'reza.sadeghi@student.basu.ac.ir','USER', true),
-    (11, '99121008',  'نازنین',  'نوری',        'nazanin.nouri@student.basu.ac.ir','USER', true),
-    (12, '99121009',  'پارسا',   'موسوی',       'parsa.mousavi@student.basu.ac.ir','USER', true),
-    (13, '99121010',  'هانیه',   'کاظمی',       'haniyeh.kazemi@student.basu.ac.ir','USER', true),
-    (14, '99121011',  'آرمان',   'یوسفی',       'arman.yousefi@student.basu.ac.ir','USER', true),
-    (15, '99121012',  'مهسا',    'طاهری',       'mahsa.taheri@student.basu.ac.ir','USER', true),
-    (16, '99121013',  'کیان',    'عباسی',       'kian.abbasi@student.basu.ac.ir', 'USER', true),
-    (17, '99121014',  'یلدا',    'رحیمی',       'yalda.rahimi@student.basu.ac.ir','USER', true),
-    (18, '99121015',  'مهدی',    'زارعی',       'mahdi.zarei@student.basu.ac.ir', 'USER', true),
-    (19, '99121016',  'پرنیا',   'نجفی',        'parnia.najafi@student.basu.ac.ir','USER', true),
-    (20, '99121017',  'عرفان',   'امینی',       'erfan.amini@student.basu.ac.ir', 'USER', true),
-    (21, '99121018',  'آیدا',    'سلیمانی',     'ayda.soleimani@student.basu.ac.ir','USER', true),
-    (22, '99121019',  'سامان',   'خلیلی',       'saman.khalili@student.basu.ac.ir','USER', true),
-    (23, '98121020',  'شبنم',    'بهرامی',      'shabnam.bahrami@student.basu.ac.ir','USER', false),
-    (24, '98121021',  'پویا',    'رستمی',       'pouya.rostami@student.basu.ac.ir','USER', false),
-    (25, '98121022',  'الناز',   'حیدری',       'elnaz.heydari@student.basu.ac.ir','USER', false)
+-- 220 fictional but realistic-looking users: 50 admins, 120 active users and 50 inactive users.
+WITH name_lists AS (
+    SELECT
+        ARRAY[
+            'نگار','امیرحسین','مریم','علی','زهرا','محمد','فاطمه','سینا','سارا','رضا',
+            'نازنین','پارسا','هانیه','آرمان','مهسا','کیان','یلدا','مهدی','پرنیا','عرفان',
+            'آیدا','سامان','شبنم','پویا','الناز','نسترن','حسین','پریسا','کاوه','مینا'
+        ]::TEXT[] AS first_names,
+        ARRAY[
+            'احمدی','کریمی','جعفری','محمدی','حسینی','رضایی','مرادی','اکبری','قاسمی','صادقی',
+            'نوری','موسوی','کاظمی','یوسفی','طاهری','عباسی','رحیمی','زارعی','نجفی','امینی',
+            'سلیمانی','خلیلی','بهرامی','رستمی','حیدری','علوی','نصیری','کمالی','شمس','آقایی'
+        ]::TEXT[] AS last_names
+), password_seed AS (
+    SELECT crypt('REMOVED_SECRET', gen_salt('bf', 10)) AS password_hash
+), user_source AS (
+    SELECT
+        i,
+        names.first_names[((i - 1) % array_length(names.first_names, 1)) + 1] AS first_name,
+        names.last_names[((i - 1) % array_length(names.last_names, 1)) + 1] AS last_name
+    FROM generate_series(1, (SELECT user_count FROM seed_expectations)) AS g(i)
+    CROSS JOIN name_lists AS names
 )
-INSERT INTO users (id, student_id, first_name, last_name, email, password_hash, role, is_active, created_at, updated_at)
+INSERT INTO users (
+    id, student_id, first_name, last_name, email, password_hash,
+    role, is_active, created_at, updated_at
+)
 SELECT
-  (substr(md5('demo-user-' || i), 1, 8) || '-' || substr(md5('demo-user-' || i), 9, 4) || '-' ||
-   substr(md5('demo-user-' || i), 13, 4) || '-' || substr(md5('demo-user-' || i), 17, 4) || '-' ||
-   substr(md5('demo-user-' || i), 21, 12))::uuid,
-  student_id, first_name, last_name, email, crypt('REMOVED_SECRET', gen_salt('bf', 10)), role, is_active,
-  NOW() - ((26 - i) || ' days')::interval, NOW()
-FROM user_data
+    pg_temp.coverage_uuid('coverage-user-' || source.i),
+    (4100000000::BIGINT + source.i)::TEXT,
+    source.first_name,
+    source.last_name,
+    'ticket.reservation.demo+full.user' || lpad(source.i::TEXT, 3, '0') || '@gmail.com',
+    password.password_hash,
+    CASE WHEN source.i <= 50 THEN 'ADMIN' ELSE 'USER' END,
+    source.i <= 170,
+    NOW() - make_interval(days => ((220 - source.i) % 180)),
+    NOW()
+FROM user_source AS source
+CROSS JOIN password_seed AS password
 ON CONFLICT (id) DO UPDATE SET
-  student_id = EXCLUDED.student_id,
-  first_name = EXCLUDED.first_name,
-  last_name = EXCLUDED.last_name,
-  email = EXCLUDED.email,
-  password_hash = EXCLUDED.password_hash,
-  role = EXCLUDED.role,
-  is_active = EXCLUDED.is_active,
-  updated_at = NOW();
+    student_id = EXCLUDED.student_id,
+    first_name = EXCLUDED.first_name,
+    last_name = EXCLUDED.last_name,
+    email = EXCLUDED.email,
+    password_hash = EXCLUDED.password_hash,
+    role = EXCLUDED.role,
+    is_active = EXCLUDED.is_active,
+    updated_at = NOW();
 
--- 25 events covering ACTIVE, CLOSED, COMPLETED and CANCELLED states.
-WITH event_data(i, title, description, day_offset, start_time, end_time, capacity, status, poster_url) AS (
-  VALUES
-    (1,  'همایش هوش مصنوعی در صنعت',              'ارائه تجربه شرکت‌های ایرانی در استفاده عملی از یادگیری ماشین و مدل‌های زبانی.',             3,  '09:00','12:00',60,'ACTIVE',''),
-    (2,  'کارگاه مقدماتی React',                   'ساخت یک رابط کاربری واقعی با کامپوننت‌ها، هوک‌ها و مدیریت وضعیت.',                            5,  '14:00','18:00',48,'ACTIVE',''),
-    (3,  'شب شعر و موسیقی دانشجویی',               'اجرای شعرخوانی، موسیقی زنده و معرفی استعدادهای هنری دانشگاه.',                              7,  '17:00','20:00',72,'ACTIVE',''),
-    (4,  'نشست مسیر شغلی مهندسان نرم‌افزار',       'گفت‌وگو با فارغ‌التحصیلان درباره رزومه، مصاحبه فنی و ورود به بازار کار.',                    9,  '10:00','13:00',60,'ACTIVE',''),
-    (5,  'کارگاه امنیت سایبری و هک اخلاقی',        'آشنایی عملی با امنیت وب، تهدیدهای رایج و اصول تست نفوذ مجاز.',                              12, '08:30','16:30',40,'ACTIVE',''),
-    (6,  'دفاع پایان‌نامه‌های برتر دانشکده',        'ارائه پایان‌نامه‌های منتخب رشته‌های کامپیوتر، برق، عمران و مکانیک.',                         15, '08:00','14:00',72,'ACTIVE',''),
-    (7,  'جشن فارغ‌التحصیلی دانشکده مهندسی',       'مراسم تقدیر از دانش‌آموختگان همراه با سخنرانی، عکس گروهی و اجرای هنری.',                    18, '16:00','20:30',60,'ACTIVE',''),
-    (8,  'مسابقه ارائه سه دقیقه‌ای پژوهش',          'دانشجویان پژوهش خود را در سه دقیقه برای هیئت داوران و مخاطبان ارائه می‌کنند.',               21, '13:00','17:00',48,'ACTIVE',''),
-    (9,  'سمینار انرژی‌های تجدیدپذیر',              'بررسی فناوری خورشیدی و بادی و فرصت‌های پژوهشی انرژی پاک در ایران.',                         24, '09:30','12:30',60,'ACTIVE',''),
-    (10, 'رویداد ایده‌پردازی شهر هوشمند',           'تشکیل تیم و طراحی راه‌حل برای حمل‌ونقل، انرژی و خدمات شهری هوشمند.',                        27, '08:00','19:00',48,'ACTIVE',''),
-    (11, 'کارگاه طراحی تجربه کاربری',               'پژوهش کاربر، طراحی وایرفریم و آزمون کاربردپذیری روی یک محصول نمونه.',                       30, '14:00','18:00',40,'ACTIVE',''),
-    (12, 'نشست فرصت‌های تحصیل در مقطع دکتری',       'راهنمای انتخاب دانشگاه، مکاتبه علمی، پروپوزال و دریافت حمایت پژوهشی.',                      34, '10:00','12:30',60,'ACTIVE',''),
-    (13, 'مسترکلاس تحلیل داده با پایتون',           'ظرفیت ثبت‌نام تکمیل شده؛ آموزش پاک‌سازی، تحلیل و مصورسازی داده‌های واقعی.',                  6,  '09:00','17:00',40,'CLOSED',''),
-    (14, 'بازدید مجازی از آزمایشگاه رباتیک',        'ثبت‌نام بسته شده؛ معرفی ربات‌های صنعتی، بینایی ماشین و پروژه‌های دانشجویی.',                 11, '15:00','17:00',48,'CLOSED',''),
-    (15, 'دوره فشرده اصول ارائه علمی',              'ثبت‌نام پایان یافته؛ تمرین ساخت اسلاید و ارائه مؤثر برای دفاع و کنفرانس.',                   17, '09:00','13:00',40,'CLOSED',''),
-    (16, 'نشست کارآفرینی و جذب سرمایه',             'ثبت‌نام بسته شده؛ بررسی مدل کسب‌وکار، ارائه به سرمایه‌گذار و تجربه بنیان‌گذاران.',           23, '16:00','19:00',60,'CLOSED',''),
-    (17, 'آیین روز مهندس',                          'مراسم برگزارشده با تقدیر از استادان و دانشجویان برگزیده دانشکده.',                         -3,  '15:00','19:00',72,'COMPLETED',''),
-    (18, 'کارگاه Git و همکاری تیمی',                'کارگاه برگزارشده درباره شاخه‌ها، Pull Request، حل تعارض و بازبینی کد.',                    -7,  '09:00','15:00',48,'COMPLETED',''),
-    (19, 'سمینار اینترنت اشیا',                     'رویداد برگزارشده درباره حسگرها، پروتکل‌ها و کاربردهای اینترنت اشیا صنعتی.',                -12,  '10:00','13:00',60,'COMPLETED',''),
-    (20, 'نمایشگاه پروژه‌های دانشجویی',             'نمایشگاه برگزارشده پروژه‌های درس‌های طراحی مهندسی و پروژه پایانی.',                        -18,  '08:30','16:00',72,'COMPLETED',''),
-    (21, 'اردوی علمی نیروگاه خورشیدی',              'به دلیل نامساعد بودن شرایط جوی لغو شد.',                                                    4,  '07:00','18:00',40,'CANCELLED',''),
-    (22, 'سخنرانی اقتصاد دیجیتال',                  'به دلیل تغییر برنامه سخنران لغو شد.',                                                       10, '14:00','16:00',60,'CANCELLED',''),
-    (23, 'مسابقه برنامه‌نویسی دانشکده',             'به دلیل هم‌زمانی با امتحانات میان‌ترم لغو شد.',                                             16, '08:00','18:00',48,'CANCELLED',''),
-    (24, 'کارگاه چاپ سه‌بعدی',                      'به دلیل تعمیر تجهیزات آزمایشگاه لغو شد.',                                                  22, '09:00','14:00',40,'CANCELLED',''),
-    (25, 'نشست بین‌المللی مهندسی زلزله',            'به دلیل عدم امکان حضور مهمانان خارجی لغو شد.',                                             29, '09:00','13:00',72,'CANCELLED','')
+-- 200 events: exactly 50 ACTIVE, 50 CLOSED, 50 COMPLETED and 50 CANCELLED.
+WITH event_lists AS (
+    SELECT
+        ARRAY[
+            'همایش هوش مصنوعی در صنعت','کارگاه توسعه وب مدرن','شب شعر و موسیقی دانشجویی',
+            'نشست مسیر شغلی مهندسان نرم‌افزار','کارگاه امنیت سایبری و هک اخلاقی',
+            'دفاع پایان‌نامه‌های برتر','جشن فارغ‌التحصیلی دانشکده','مسابقه ارائه سه دقیقه‌ای پژوهش',
+            'سمینار انرژی‌های تجدیدپذیر','رویداد ایده‌پردازی شهر هوشمند','کارگاه طراحی تجربه کاربری',
+            'نشست فرصت‌های تحصیل در مقطع دکتری','مسترکلاس تحلیل داده با پایتون',
+            'بازدید آزمایشگاه رباتیک','دوره اصول ارائه علمی','نشست کارآفرینی و جذب سرمایه',
+            'کارگاه اینترنت اشیا','همایش مهندسی پزشکی','نمایش تئاتر دانشجویی','مسابقات برنامه‌نویسی',
+            'نشست سواد رسانه‌ای','کارگاه نگارش مقاله علمی','سمینار رایانش ابری','جشنواره فیلم کوتاه',
+            'کارگاه مدیریت پروژه چابک'
+        ]::TEXT[] AS titles,
+        ARRAY[
+            'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=900&q=80',
+            'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=900&q=80',
+            'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=80',
+            'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=80',
+            'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=900&q=80',
+            'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=900&q=80',
+            'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=80',
+            'https://images.unsplash.com/photo-1503428593586-e225b39bddfe?auto=format&fit=crop&w=900&q=80',
+            'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=900&q=80',
+            'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=900&q=80'
+        ]::TEXT[] AS posters
+), event_source AS (
+    SELECT
+        i,
+        lists.titles[((i - 1) % array_length(lists.titles, 1)) + 1] AS base_title,
+        lists.posters[((i - 1) % array_length(lists.posters, 1)) + 1] AS poster_url,
+        CASE
+            WHEN i <= 50 THEN 'ACTIVE'
+            WHEN i <= 100 THEN 'CLOSED'
+            WHEN i <= 150 THEN 'COMPLETED'
+            ELSE 'CANCELLED'
+        END AS status
+    FROM generate_series(1, (SELECT event_count FROM seed_expectations)) AS g(i)
+    CROSS JOIN event_lists AS lists
 )
-INSERT INTO events (id, title, description, event_date, start_time, end_time, total_capacity, poster_url, status, created_by, created_at, updated_at)
-SELECT
-  (substr(md5('demo-event-' || i), 1, 8) || '-' || substr(md5('demo-event-' || i), 9, 4) || '-' ||
-   substr(md5('demo-event-' || i), 13, 4) || '-' || substr(md5('demo-event-' || i), 17, 4) || '-' ||
-   substr(md5('demo-event-' || i), 21, 12))::uuid,
-  title, description, CURRENT_DATE + day_offset, start_time, end_time, capacity, poster_url, status,
-  (substr(md5('demo-user-' || (((i - 1) % 3) + 1)), 1, 8) || '-' ||
-   substr(md5('demo-user-' || (((i - 1) % 3) + 1)), 9, 4) || '-' ||
-   substr(md5('demo-user-' || (((i - 1) % 3) + 1)), 13, 4) || '-' ||
-   substr(md5('demo-user-' || (((i - 1) % 3) + 1)), 17, 4) || '-' ||
-   substr(md5('demo-user-' || (((i - 1) % 3) + 1)), 21, 12))::uuid,
-  NOW() - ((26 - i) || ' days')::interval, NOW()
-FROM event_data;
-
--- Generate the exact capacity for every event, with VIP seats in the first row.
-WITH demo_events AS (
-  SELECT e.*, row_number() OVER (ORDER BY e.created_at, e.id) AS event_no
-  FROM events e
-  WHERE e.id IN (
-    SELECT (substr(md5('demo-event-' || i), 1, 8) || '-' || substr(md5('demo-event-' || i), 9, 4) || '-' ||
-            substr(md5('demo-event-' || i), 13, 4) || '-' || substr(md5('demo-event-' || i), 17, 4) || '-' ||
-            substr(md5('demo-event-' || i), 21, 12))::uuid
-    FROM generate_series(1, 25) AS g(i)
-  )
+INSERT INTO events (
+    id, title, description, event_date, start_time, end_time,
+    total_capacity, poster_url, status, created_by, created_at, updated_at
 )
-INSERT INTO seats (id, event_id, row_number, seat_number, seat_label, seat_type, status, created_at)
 SELECT
-  (substr(md5('demo-seat-' || event_no || '-' || n), 1, 8) || '-' ||
-   substr(md5('demo-seat-' || event_no || '-' || n), 9, 4) || '-' ||
-   substr(md5('demo-seat-' || event_no || '-' || n), 13, 4) || '-' ||
-   substr(md5('demo-seat-' || event_no || '-' || n), 17, 4) || '-' ||
-   substr(md5('demo-seat-' || event_no || '-' || n), 21, 12))::uuid,
-  id,
-  ((n - 1) / 8) + 1,
-  ((n - 1) % 8) + 1,
-  chr(64 + (((n - 1) / 8) + 1)::int) || (((n - 1) % 8) + 1)::text,
-  CASE WHEN n <= 8 THEN 'VIP' ELSE 'REGULAR' END,
-  'AVAILABLE',
-  NOW()
-FROM demo_events
-CROSS JOIN LATERAL generate_series(1, demo_events.total_capacity) AS s(n);
+    pg_temp.coverage_uuid('coverage-event-' || source.i),
+    source.base_title || ' — دوره ' || source.i,
+    'رویداد واقعی‌نمای شماره ' || source.i ||
+        ' برای پوشش جستجو، فیلتر، ظرفیت، گزارش‌گیری، رزرو و مدیریت وضعیت در سامانه.',
+    CASE
+        WHEN source.status IN ('ACTIVE', 'CLOSED')
+            THEN CURRENT_DATE + (((source.i - 1) % 25) + 1)
+        WHEN source.status = 'COMPLETED'
+            THEN CURRENT_DATE - (((source.i - 101) % 50) + 1)
+        ELSE CURRENT_DATE + (((source.i - 151) % 30) + 2)
+    END,
+    (ARRAY['08:00','09:00','10:30','13:00','14:30','16:00','18:00'])[((source.i - 1) % 7) + 1],
+    (ARRAY['10:00','11:30','13:00','15:00','17:00','19:00','21:00'])[((source.i - 1) % 7) + 1],
+    80 + (((source.i - 1) % 5) * 16),
+    source.poster_url,
+    source.status,
+    pg_temp.coverage_uuid('coverage-user-' || (((source.i - 1) % 50) + 1)),
+    NOW() - make_interval(days => (source.i % 120)),
+    NOW()
+FROM event_source AS source;
 
--- 25 active reservations distributed over 12 active events and the last 7 days.
+-- More than 20,000 seats; the first two rows of every event are VIP.
+WITH event_source AS (
+    SELECT i AS event_no, 80 + (((i - 1) % 5) * 16) AS capacity
+    FROM generate_series(1, (SELECT event_count FROM seed_expectations)) AS g(i)
+)
+INSERT INTO seats (
+    id, event_id, row_number, seat_number, seat_label, seat_type, status, created_at
+)
+SELECT
+    pg_temp.coverage_uuid('coverage-seat-' || event.event_no || '-' || seat_no),
+    pg_temp.coverage_uuid('coverage-event-' || event.event_no),
+    ((seat_no - 1) / 8) + 1,
+    ((seat_no - 1) % 8) + 1,
+    chr(64 + (((seat_no - 1) / 8) + 1)) || (((seat_no - 1) % 8) + 1)::TEXT,
+    CASE WHEN seat_no <= 16 THEN 'VIP' ELSE 'REGULAR' END,
+    'AVAILABLE',
+    NOW() - make_interval(days => (event.event_no % 120))
+FROM event_source AS event
+CROSS JOIN LATERAL generate_series(1, event.capacity) AS seats_for_event(seat_no);
+
+-- 1,000 active reservations across ACTIVE and CLOSED events (10 per event).
 WITH assignments AS (
-  SELECT i,
-         ((i - 1) % 12) + 1 AS event_no,
-         ((i - 1) % 19) + 4 AS user_no,
-         ((i - 1) / 12) + 1 AS seat_rank
-  FROM generate_series(1, 25) AS g(i)
+    SELECT
+        i,
+        ((i - 1) / 10) + 1 AS event_no,
+        ((i - 1) % 10) + 1 AS slot_no
+    FROM generate_series(1, (SELECT active_reservation_count FROM seed_expectations)) AS g(i)
 ), resolved AS (
-  SELECT a.*,
-    (SELECT id FROM events WHERE id = (substr(md5('demo-event-' || a.event_no),1,8)||'-'||substr(md5('demo-event-' || a.event_no),9,4)||'-'||substr(md5('demo-event-' || a.event_no),13,4)||'-'||substr(md5('demo-event-' || a.event_no),17,4)||'-'||substr(md5('demo-event-' || a.event_no),21,12))::uuid) AS event_id,
-    (substr(md5('demo-user-' || a.user_no),1,8)||'-'||substr(md5('demo-user-' || a.user_no),9,4)||'-'||substr(md5('demo-user-' || a.user_no),13,4)||'-'||substr(md5('demo-user-' || a.user_no),17,4)||'-'||substr(md5('demo-user-' || a.user_no),21,12))::uuid AS user_id
-  FROM assignments a
+    SELECT
+        assignment.*,
+        51 + ((assignment.event_no * 13 + assignment.slot_no * 7) % 120) AS user_no
+    FROM assignments AS assignment
 )
-INSERT INTO reservations (id, user_id, event_id, seat_id, status, reserved_at, cancelled_at)
+INSERT INTO reservations (
+    id, user_id, event_id, seat_id, status, reserved_at, cancelled_at
+)
 SELECT
-  (substr(md5('demo-active-reservation-'||i),1,8)||'-'||substr(md5('demo-active-reservation-'||i),9,4)||'-'||substr(md5('demo-active-reservation-'||i),13,4)||'-'||substr(md5('demo-active-reservation-'||i),17,4)||'-'||substr(md5('demo-active-reservation-'||i),21,12))::uuid,
-  user_id, event_id,
-  (SELECT s.id FROM seats s WHERE s.event_id = r.event_id ORDER BY s.row_number, s.seat_number OFFSET (seat_rank - 1) LIMIT 1),
-  'ACTIVE', NOW() - (((i - 1) % 7) || ' days')::interval - ((i % 10) || ' hours')::interval, NULL
-FROM resolved r;
+    pg_temp.coverage_uuid('coverage-active-reservation-' || item.i),
+    pg_temp.coverage_uuid('coverage-user-' || item.user_no),
+    pg_temp.coverage_uuid('coverage-event-' || item.event_no),
+    pg_temp.coverage_uuid('coverage-seat-' || item.event_no || '-' || item.slot_no),
+    'ACTIVE',
+    CASE
+        WHEN item.i <= 50
+            THEN date_trunc('day', NOW()) + make_interval(mins => item.i * 5)
+        ELSE NOW()
+            - make_interval(days => ((item.i - 51) % 60))
+            - make_interval(hours => ((item.i * 17) % 24))
+    END,
+    NULL
+FROM resolved AS item;
 
--- 25 cancelled reservations, useful for history, filters and CSV reports.
+-- 500 completed reservations across all COMPLETED events (10 per event).
 WITH assignments AS (
-  SELECT i,
-         ((i + 11) % 25) + 1 AS event_no,
-         ((i + 9) % 22) + 4 AS user_no,
-         20 + (((i - 1) / 25)) AS seat_offset
-  FROM generate_series(1, 25) AS g(i)
+    SELECT
+        i,
+        101 + ((i - 1) / 10) AS event_no,
+        ((i - 1) % 10) + 1 AS slot_no
+    FROM generate_series(1, (SELECT completed_reservation_count FROM seed_expectations)) AS g(i)
 ), resolved AS (
-  SELECT a.*,
-    (substr(md5('demo-event-' || a.event_no),1,8)||'-'||substr(md5('demo-event-' || a.event_no),9,4)||'-'||substr(md5('demo-event-' || a.event_no),13,4)||'-'||substr(md5('demo-event-' || a.event_no),17,4)||'-'||substr(md5('demo-event-' || a.event_no),21,12))::uuid AS event_id,
-    (substr(md5('demo-user-' || a.user_no),1,8)||'-'||substr(md5('demo-user-' || a.user_no),9,4)||'-'||substr(md5('demo-user-' || a.user_no),13,4)||'-'||substr(md5('demo-user-' || a.user_no),17,4)||'-'||substr(md5('demo-user-' || a.user_no),21,12))::uuid AS user_id
-  FROM assignments a
+    SELECT
+        assignment.*,
+        51 + ((assignment.event_no * 19 + assignment.slot_no * 11) % 120) AS user_no
+    FROM assignments AS assignment
 )
-INSERT INTO reservations (id, user_id, event_id, seat_id, status, reserved_at, cancelled_at)
+INSERT INTO reservations (
+    id, user_id, event_id, seat_id, status, reserved_at, cancelled_at
+)
 SELECT
-  (substr(md5('demo-cancelled-reservation-'||i),1,8)||'-'||substr(md5('demo-cancelled-reservation-'||i),9,4)||'-'||substr(md5('demo-cancelled-reservation-'||i),13,4)||'-'||substr(md5('demo-cancelled-reservation-'||i),17,4)||'-'||substr(md5('demo-cancelled-reservation-'||i),21,12))::uuid,
-  user_id, event_id,
-  (SELECT s.id FROM seats s WHERE s.event_id = r.event_id ORDER BY s.row_number, s.seat_number OFFSET seat_offset LIMIT 1),
-  'CANCELLED', NOW() - ((10 + (i % 15)) || ' days')::interval,
-  NOW() - ((2 + (i % 8)) || ' days')::interval
-FROM resolved r;
+    pg_temp.coverage_uuid('coverage-completed-reservation-' || item.i),
+    pg_temp.coverage_uuid('coverage-user-' || item.user_no),
+    pg_temp.coverage_uuid('coverage-event-' || item.event_no),
+    pg_temp.coverage_uuid('coverage-seat-' || item.event_no || '-' || item.slot_no),
+    'COMPLETED',
+    event.event_date - make_interval(days => (10 + item.slot_no)),
+    NULL
+FROM resolved AS item
+JOIN events AS event ON event.id = pg_temp.coverage_uuid('coverage-event-' || item.event_no);
 
--- Synchronize seat status only with active reservations.
-UPDATE seats s
-SET status = 'RESERVED'
-WHERE EXISTS (
-  SELECT 1 FROM reservations r
-  WHERE r.seat_id = s.id AND r.status = 'ACTIVE'
+-- 500 cancelled reservations across all event statuses, including 50 cancelled today.
+WITH assignments AS (
+    SELECT
+        i,
+        ((i - 1) % 200) + 1 AS event_no,
+        ((i - 1) / 200) AS occurrence_no
+    FROM generate_series(1, (SELECT cancelled_reservation_count FROM seed_expectations)) AS g(i)
+), resolved AS (
+    SELECT
+        assignment.*,
+        41 + assignment.occurrence_no AS seat_rank,
+        171 + ((assignment.event_no + assignment.occurrence_no * 11) % 50) AS user_no
+    FROM assignments AS assignment
+)
+INSERT INTO reservations (
+    id, user_id, event_id, seat_id, status, reserved_at, cancelled_at
+)
+SELECT
+    pg_temp.coverage_uuid('coverage-cancelled-reservation-' || item.i),
+    pg_temp.coverage_uuid('coverage-user-' || item.user_no),
+    pg_temp.coverage_uuid('coverage-event-' || item.event_no),
+    pg_temp.coverage_uuid('coverage-seat-' || item.event_no || '-' || item.seat_rank),
+    'CANCELLED',
+    NOW() - make_interval(days => (20 + (item.i % 120))),
+    CASE
+        WHEN item.i <= 50
+            THEN date_trunc('day', NOW()) + make_interval(mins => item.i * 4)
+        ELSE NOW() - make_interval(days => (item.i % 20))
+    END
+FROM resolved AS item;
+
+-- Seat state reflects only reservations that still own a seat.
+UPDATE seats AS seat
+SET status = CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM reservations AS reservation
+        WHERE reservation.seat_id = seat.id
+          AND reservation.status IN ('ACTIVE', 'COMPLETED')
+    ) THEN 'RESERVED'
+    ELSE 'AVAILABLE'
+END
+WHERE seat.event_id IN (
+    SELECT pg_temp.coverage_uuid('coverage-event-' || i)
+    FROM generate_series(1, 200) AS g(i)
 );
 
--- 25 audit entries covering all five supported admin actions.
-WITH audit_data AS (
-  SELECT i,
-    (ARRAY['CREATE_EVENT','UPDATE_EVENT','TOGGLE_USER','CHANGE_ROLE','DELETE_EVENT'])[((i - 1) % 5) + 1] AS action,
-    CASE WHEN ((i - 1) % 5) IN (2,3) THEN 'USER' ELSE 'EVENT' END AS target_type
-  FROM generate_series(1, 25) AS g(i)
+-- 250 audit rows: exactly 50 examples for each supported admin action.
+WITH audit_source AS (
+    SELECT
+        i,
+        (ARRAY['CREATE_EVENT','UPDATE_EVENT','DELETE_EVENT','TOGGLE_USER','CHANGE_ROLE'])[((i - 1) % 5) + 1] AS action
+    FROM generate_series(1, 250) AS g(i)
 )
-INSERT INTO audit_logs (id, admin_id, action, target_id, target_type, details, created_at)
+INSERT INTO audit_logs (
+    id, admin_id, action, target_id, target_type, details, created_at
+)
 SELECT
-  (substr(md5('demo-audit-'||i),1,8)||'-'||substr(md5('demo-audit-'||i),9,4)||'-'||substr(md5('demo-audit-'||i),13,4)||'-'||substr(md5('demo-audit-'||i),17,4)||'-'||substr(md5('demo-audit-'||i),21,12))::uuid,
-  (substr(md5('demo-user-' || (((i - 1) % 3) + 1)),1,8)||'-'||substr(md5('demo-user-' || (((i - 1) % 3) + 1)),9,4)||'-'||substr(md5('demo-user-' || (((i - 1) % 3) + 1)),13,4)||'-'||substr(md5('demo-user-' || (((i - 1) % 3) + 1)),17,4)||'-'||substr(md5('demo-user-' || (((i - 1) % 3) + 1)),21,12))::uuid,
-  action,
-  CASE WHEN target_type = 'USER'
-    THEN (substr(md5('demo-user-' || (((i + 3) % 22) + 4)),1,8)||'-'||substr(md5('demo-user-' || (((i + 3) % 22) + 4)),9,4)||'-'||substr(md5('demo-user-' || (((i + 3) % 22) + 4)),13,4)||'-'||substr(md5('demo-user-' || (((i + 3) % 22) + 4)),17,4)||'-'||substr(md5('demo-user-' || (((i + 3) % 22) + 4)),21,12))::uuid
-    ELSE (substr(md5('demo-event-' || (((i - 1) % 25) + 1)),1,8)||'-'||substr(md5('demo-event-' || (((i - 1) % 25) + 1)),9,4)||'-'||substr(md5('demo-event-' || (((i - 1) % 25) + 1)),13,4)||'-'||substr(md5('demo-event-' || (((i - 1) % 25) + 1)),17,4)||'-'||substr(md5('demo-event-' || (((i - 1) % 25) + 1)),21,12))::uuid
-  END,
-  target_type,
-  jsonb_build_object('source','comprehensive-demo-dataset','sequence',i,'description','عملیات نمونه مدیریتی'),
-  NOW() - ((25 - i) || ' hours')::interval
-FROM audit_data;
+    pg_temp.coverage_uuid('coverage-audit-' || source.i),
+    pg_temp.coverage_uuid('coverage-user-' || (((source.i - 1) % 50) + 1)),
+    source.action,
+    CASE WHEN source.action IN ('TOGGLE_USER', 'CHANGE_ROLE')
+        THEN pg_temp.coverage_uuid('coverage-user-' || (((source.i * 7) % 170) + 51))
+        ELSE pg_temp.coverage_uuid('coverage-event-' || (((source.i - 1) % 200) + 1))
+    END,
+    CASE WHEN source.action IN ('TOGGLE_USER', 'CHANGE_ROLE') THEN 'USER' ELSE 'EVENT' END,
+    jsonb_build_object(
+        'source', 'full-coverage-dataset',
+        'sequence', source.i,
+        'action', source.action,
+        'description', 'عملیات مدیریتی واقعی‌نما برای تست گزارش و تاریخچه'
+    ),
+    NOW() - make_interval(hours => ((250 - source.i) % 120))
+FROM audit_source AS source;
+
+-- Hard validation: any inconsistency aborts and rolls back the whole seed.
+DO $$
+DECLARE
+    expected seed_expectations%ROWTYPE;
+    actual BIGINT;
+BEGIN
+    SELECT * INTO expected FROM seed_expectations LIMIT 1;
+
+    SELECT COUNT(*) INTO actual FROM users
+    WHERE id IN (
+        SELECT pg_temp.coverage_uuid('coverage-user-' || i)
+        FROM generate_series(1, expected.user_count) AS g(i)
+    );
+    IF actual <> expected.user_count THEN
+        RAISE EXCEPTION 'Dataset validation failed: expected % users, found %', expected.user_count, actual;
+    END IF;
+
+    IF (SELECT COUNT(*) FROM users WHERE role = 'ADMIN' AND id IN (
+        SELECT pg_temp.coverage_uuid('coverage-user-' || i)
+        FROM generate_series(1, expected.user_count) AS g(i)
+    )) < 50 OR (SELECT COUNT(*) FROM users WHERE role = 'USER' AND id IN (
+        SELECT pg_temp.coverage_uuid('coverage-user-' || i)
+        FROM generate_series(1, expected.user_count) AS g(i)
+    )) < 50 OR (SELECT COUNT(*) FROM users WHERE is_active = FALSE AND id IN (
+        SELECT pg_temp.coverage_uuid('coverage-user-' || i)
+        FROM generate_series(1, expected.user_count) AS g(i)
+    )) < 50 THEN
+        RAISE EXCEPTION 'Dataset validation failed: ADMIN, USER or inactive-user coverage is below 50';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM users
+        WHERE id IN (
+            SELECT pg_temp.coverage_uuid('coverage-user-' || i)
+            FROM generate_series(1, expected.user_count) AS g(i)
+        )
+          AND (student_id !~ '^[0-9]{10,20}$' OR email !~ '^[a-z0-9.!#$%&''*+/=?^_{|}~-]+@gmail\.com$')
+    ) THEN
+        RAISE EXCEPTION 'Dataset validation failed: invalid email or student ID';
+    END IF;
+
+    SELECT COUNT(*) INTO actual FROM (
+        SELECT status
+        FROM events
+        WHERE id IN (
+            SELECT pg_temp.coverage_uuid('coverage-event-' || i)
+            FROM generate_series(1, expected.event_count) AS g(i)
+        )
+        GROUP BY status
+        HAVING COUNT(*) = expected.event_status_count
+    ) AS valid_status_groups;
+    IF actual <> 4 THEN
+        RAISE EXCEPTION 'Dataset validation failed: every event status must have exactly % rows', expected.event_status_count;
+    END IF;
+
+    SELECT COUNT(*) INTO actual FROM seats
+    WHERE event_id IN (
+        SELECT pg_temp.coverage_uuid('coverage-event-' || i)
+        FROM generate_series(1, expected.event_count) AS g(i)
+    );
+    IF actual <> (SELECT SUM(total_capacity) FROM events WHERE id IN (
+        SELECT pg_temp.coverage_uuid('coverage-event-' || i)
+        FROM generate_series(1, expected.event_count) AS g(i)
+    )) THEN
+        RAISE EXCEPTION 'Dataset validation failed: seat count does not match event capacity';
+    END IF;
+
+    IF (SELECT COUNT(*) FROM seats WHERE seat_type = 'VIP' AND event_id IN (
+        SELECT pg_temp.coverage_uuid('coverage-event-' || i)
+        FROM generate_series(1, expected.event_count) AS g(i)
+    )) < 50 OR (SELECT COUNT(*) FROM seats WHERE seat_type = 'REGULAR' AND event_id IN (
+        SELECT pg_temp.coverage_uuid('coverage-event-' || i)
+        FROM generate_series(1, expected.event_count) AS g(i)
+    )) < 50 THEN
+        RAISE EXCEPTION 'Dataset validation failed: VIP and REGULAR seat coverage is insufficient';
+    END IF;
+
+    IF (SELECT COUNT(*) FROM reservations WHERE status = 'ACTIVE' AND id IN (
+        SELECT pg_temp.coverage_uuid('coverage-active-reservation-' || i)
+        FROM generate_series(1, expected.active_reservation_count) AS g(i)
+    )) <> expected.active_reservation_count THEN
+        RAISE EXCEPTION 'Dataset validation failed: active reservation count mismatch';
+    END IF;
+
+    IF (SELECT COUNT(*) FROM reservations WHERE status = 'COMPLETED' AND id IN (
+        SELECT pg_temp.coverage_uuid('coverage-completed-reservation-' || i)
+        FROM generate_series(1, expected.completed_reservation_count) AS g(i)
+    )) <> expected.completed_reservation_count THEN
+        RAISE EXCEPTION 'Dataset validation failed: completed reservation count mismatch';
+    END IF;
+
+    IF (SELECT COUNT(*) FROM reservations WHERE status = 'CANCELLED' AND cancelled_at IS NOT NULL AND id IN (
+        SELECT pg_temp.coverage_uuid('coverage-cancelled-reservation-' || i)
+        FROM generate_series(1, expected.cancelled_reservation_count) AS g(i)
+    )) <> expected.cancelled_reservation_count THEN
+        RAISE EXCEPTION 'Dataset validation failed: cancelled reservation count mismatch';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM reservations AS reservation
+        JOIN seats AS seat ON seat.id = reservation.seat_id
+        WHERE reservation.event_id <> seat.event_id
+          AND reservation.event_id IN (
+              SELECT pg_temp.coverage_uuid('coverage-event-' || i)
+              FROM generate_series(1, expected.event_count) AS g(i)
+          )
+    ) THEN
+        RAISE EXCEPTION 'Dataset validation failed: reservation points to a seat from another event';
+    END IF;
+
+    IF EXISTS (
+        SELECT user_id, event_id
+        FROM reservations
+        WHERE event_id IN (
+            SELECT pg_temp.coverage_uuid('coverage-event-' || i)
+            FROM generate_series(1, expected.event_count) AS g(i)
+        )
+        GROUP BY user_id, event_id
+        HAVING COUNT(*) > 1
+    ) THEN
+        RAISE EXCEPTION 'Dataset validation failed: duplicate user/event reservation';
+    END IF;
+
+    IF EXISTS (
+        SELECT seat_id
+        FROM reservations
+        WHERE event_id IN (
+            SELECT pg_temp.coverage_uuid('coverage-event-' || i)
+            FROM generate_series(1, expected.event_count) AS g(i)
+        )
+        GROUP BY seat_id
+        HAVING COUNT(*) > 1
+    ) THEN
+        RAISE EXCEPTION 'Dataset validation failed: duplicate seat reservation';
+    END IF;
+
+    SELECT COUNT(*) INTO actual FROM (
+        SELECT action
+        FROM audit_logs
+        WHERE details->>'source' = 'full-coverage-dataset'
+        GROUP BY action
+        HAVING COUNT(*) = expected.audit_per_action
+    ) AS valid_action_groups;
+    IF actual <> 5 THEN
+        RAISE EXCEPTION 'Dataset validation failed: every audit action must have exactly % rows', expected.audit_per_action;
+    END IF;
+END $$;
 
 COMMIT;
 
--- Quick verification summary
-SELECT 'users' AS entity, COUNT(*) AS records
-FROM users
-WHERE id IN (SELECT (substr(md5('demo-user-'||i),1,8)||'-'||substr(md5('demo-user-'||i),9,4)||'-'||substr(md5('demo-user-'||i),13,4)||'-'||substr(md5('demo-user-'||i),17,4)||'-'||substr(md5('demo-user-'||i),21,12))::uuid FROM generate_series(1,25) g(i))
+-- Human-readable verification summary.
+SELECT 'users' AS feature, COUNT(*) AS records
+FROM users WHERE id IN (SELECT pg_temp.coverage_uuid('coverage-user-' || i) FROM generate_series(1, 220) AS g(i))
 UNION ALL
-SELECT 'events', COUNT(*) FROM events WHERE id IN (SELECT (substr(md5('demo-event-'||i),1,8)||'-'||substr(md5('demo-event-'||i),9,4)||'-'||substr(md5('demo-event-'||i),13,4)||'-'||substr(md5('demo-event-'||i),17,4)||'-'||substr(md5('demo-event-'||i),21,12))::uuid FROM generate_series(1,25) g(i))
-UNION ALL SELECT 'seats', COUNT(*) FROM seats WHERE event_id IN (SELECT (substr(md5('demo-event-'||i),1,8)||'-'||substr(md5('demo-event-'||i),9,4)||'-'||substr(md5('demo-event-'||i),13,4)||'-'||substr(md5('demo-event-'||i),17,4)||'-'||substr(md5('demo-event-'||i),21,12))::uuid FROM generate_series(1,25) g(i))
-UNION ALL SELECT 'active_reservations', COUNT(*) FROM reservations WHERE status='ACTIVE' AND id IN (SELECT (substr(md5('demo-active-reservation-'||i),1,8)||'-'||substr(md5('demo-active-reservation-'||i),9,4)||'-'||substr(md5('demo-active-reservation-'||i),13,4)||'-'||substr(md5('demo-active-reservation-'||i),17,4)||'-'||substr(md5('demo-active-reservation-'||i),21,12))::uuid FROM generate_series(1,25) g(i))
-UNION ALL SELECT 'cancelled_reservations', COUNT(*) FROM reservations WHERE status='CANCELLED' AND id IN (SELECT (substr(md5('demo-cancelled-reservation-'||i),1,8)||'-'||substr(md5('demo-cancelled-reservation-'||i),9,4)||'-'||substr(md5('demo-cancelled-reservation-'||i),13,4)||'-'||substr(md5('demo-cancelled-reservation-'||i),17,4)||'-'||substr(md5('demo-cancelled-reservation-'||i),21,12))::uuid FROM generate_series(1,25) g(i))
-UNION ALL SELECT 'audit_logs', COUNT(*) FROM audit_logs WHERE details->>'source'='comprehensive-demo-dataset';
+SELECT 'events_active', COUNT(*) FROM events WHERE status = 'ACTIVE' AND id IN (SELECT pg_temp.coverage_uuid('coverage-event-' || i) FROM generate_series(1, 200) AS g(i))
+UNION ALL
+SELECT 'events_closed', COUNT(*) FROM events WHERE status = 'CLOSED' AND id IN (SELECT pg_temp.coverage_uuid('coverage-event-' || i) FROM generate_series(1, 200) AS g(i))
+UNION ALL
+SELECT 'events_completed', COUNT(*) FROM events WHERE status = 'COMPLETED' AND id IN (SELECT pg_temp.coverage_uuid('coverage-event-' || i) FROM generate_series(1, 200) AS g(i))
+UNION ALL
+SELECT 'events_cancelled', COUNT(*) FROM events WHERE status = 'CANCELLED' AND id IN (SELECT pg_temp.coverage_uuid('coverage-event-' || i) FROM generate_series(1, 200) AS g(i))
+UNION ALL
+SELECT 'seats_vip', COUNT(*) FROM seats WHERE seat_type = 'VIP' AND event_id IN (SELECT pg_temp.coverage_uuid('coverage-event-' || i) FROM generate_series(1, 200) AS g(i))
+UNION ALL
+SELECT 'seats_regular', COUNT(*) FROM seats WHERE seat_type = 'REGULAR' AND event_id IN (SELECT pg_temp.coverage_uuid('coverage-event-' || i) FROM generate_series(1, 200) AS g(i))
+UNION ALL
+SELECT 'reservations_active', COUNT(*) FROM reservations WHERE status = 'ACTIVE' AND id IN (SELECT pg_temp.coverage_uuid('coverage-active-reservation-' || i) FROM generate_series(1, 1000) AS g(i))
+UNION ALL
+SELECT 'reservations_completed', COUNT(*) FROM reservations WHERE status = 'COMPLETED' AND id IN (SELECT pg_temp.coverage_uuid('coverage-completed-reservation-' || i) FROM generate_series(1, 500) AS g(i))
+UNION ALL
+SELECT 'reservations_cancelled', COUNT(*) FROM reservations WHERE status = 'CANCELLED' AND id IN (SELECT pg_temp.coverage_uuid('coverage-cancelled-reservation-' || i) FROM generate_series(1, 500) AS g(i))
+UNION ALL
+SELECT 'audit_logs', COUNT(*) FROM audit_logs WHERE details->>'source' = 'full-coverage-dataset'
+ORDER BY feature;
+
+SELECT
+    'مدیر دیتاست' AS account,
+    'ticket.reservation.demo+full.user001@gmail.com' AS email,
+    'REMOVED_SECRET' AS password
+UNION ALL
+SELECT 'کاربر فعال', 'ticket.reservation.demo+full.user051@gmail.com', 'REMOVED_SECRET'
+UNION ALL
+SELECT 'کاربر غیرفعال', 'ticket.reservation.demo+full.user171@gmail.com', 'REMOVED_SECRET';

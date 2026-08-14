@@ -22,16 +22,6 @@ ALTER TABLE users ALTER COLUMN email TYPE VARCHAR(254);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_normalized
     ON users (LOWER(email));
 
-UPDATE users
-SET is_active = FALSE
-WHERE NOT (
-    LENGTH(email) BETWEEN 3 AND 254
-    AND email = LOWER(BTRIM(email))
-    AND email NOT LIKE '%..%'
-    AND LENGTH(SPLIT_PART(email, '@', 1)) <= 64
-    AND email ~ '^[a-z0-9.!#$%&''*+/=?^_{|}~-]+@[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$'
-);
-
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -48,22 +38,8 @@ BEGIN
                 AND email NOT LIKE '%..%'
                 AND LENGTH(SPLIT_PART(email, '@', 1)) <= 64
                 AND email ~ '^[a-z0-9.!#$%&''*+/=?^_{|}~-]+@[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$'
-            ) NOT VALID;
+            );
     END IF;
 END $$;
 
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM users
-        WHERE NOT (
-            LENGTH(email) BETWEEN 3 AND 254
-            AND email = LOWER(BTRIM(email))
-            AND email NOT LIKE '%..%'
-            AND LENGTH(SPLIT_PART(email, '@', 1)) <= 64
-            AND email ~ '^[a-z0-9.!#$%&''*+/=?^_{|}~-]+@[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$'
-        )
-    ) THEN
-        ALTER TABLE users VALIDATE CONSTRAINT users_email_integrity_check;
-    END IF;
-END $$;
+ALTER TABLE users VALIDATE CONSTRAINT users_email_integrity_check;

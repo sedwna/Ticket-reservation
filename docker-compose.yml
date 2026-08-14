@@ -1,4 +1,13 @@
 services:
+  # Validate committed demo/user data before starting the application.
+  data-check:
+    image: node:22-alpine
+    working_dir: /project
+    volumes:
+      - ./:/project:ro
+    command: ["sh", "-c", "node scripts/validate_static_user_data.mjs && node scripts/validate_full_dataset.mjs"]
+    restart: "no"
+
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
@@ -39,6 +48,8 @@ services:
     ports:
       - "8080:8080"
     depends_on:
+      data-check:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
     healthcheck:
@@ -67,6 +78,21 @@ services:
       retries: 20
       start_period: 5s
     restart: unless-stopped
+
+  # One-shot full dataset loader. Run with:
+  # docker compose --profile seed run --rm full-data
+  full-data:
+    image: postgres:16-alpine
+    profiles: ["seed"]
+    environment:
+      PGPASSWORD: postgres
+    volumes:
+      - ./scripts/seed_full_dataset.sql:/seed/seed_full_dataset.sql:ro
+    command: ["psql", "-X", "-v", "ON_ERROR_STOP=1", "-h", "postgres", "-U", "postgres", "-d", "ticket_reservation", "-f", "/seed/seed_full_dataset.sql"]
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: "no"
 
 volumes:
   postgres_data:

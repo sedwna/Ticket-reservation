@@ -6,10 +6,14 @@ import toast from 'react-hot-toast';
 import Button from '../../components/common/Button';
 import { EyeIcon, EyeSlashIcon, AcademicCapIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import defaultData from '../../data/defaultData';
+import { getEmailValidationError, normalizeEmail } from '../../utils/email';
+
+const demoAccounts = [defaultData.credentials.admin, ...defaultData.credentials.users];
+const primaryDemoAccount = demoAccounts[0];
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(primaryDemoAccount.email);
+  const [password, setPassword] = useState(primaryDemoAccount.password);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({ email: '', password: '' });
@@ -28,11 +32,7 @@ export default function LoginPage() {
   const validate = () => {
     setFormError('');
     const nextErrors = { email: '', password: '' };
-    if (!email.trim()) {
-      nextErrors.email = 'ایمیل را وارد کنید';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      nextErrors.email = 'فرمت ایمیل معتبر نیست';
-    }
+    nextErrors.email = getEmailValidationError(email);
     if (!password) {
       nextErrors.password = 'رمز عبور را وارد کنید';
     }
@@ -44,7 +44,7 @@ export default function LoginPage() {
   };
 
   const fillTestAccount = (account) => {
-    setEmail(account.email);
+    setEmail(normalizeEmail(account.email));
     setPassword(account.password);
     setShowPassword(false);
     setFormError('');
@@ -136,15 +136,16 @@ export default function LoginPage() {
               </div>
             ) : null}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-ink mb-2">
                   ایمیل
                 </label>
                 <input
                   id="email"
+                  name="ticket_reservation_demo_email"
                   type="email"
-                  autoComplete="username"
+                  autoComplete="off"
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
@@ -152,7 +153,7 @@ export default function LoginPage() {
                     setErrors((current) => ({ ...current, email: '' }));
                   }}
                   className={`input-field ltr text-left ${errors.email ? 'error' : ''}`}
-                  placeholder="example@basu.ac.ir"
+                  placeholder="example@gmail.com"
                   dir="ltr"
                   autoFocus
                   aria-invalid={!!errors.email}
@@ -175,8 +176,9 @@ export default function LoginPage() {
                 <div className="relative">
                   <input
                     id="password"
+                    name="ticket_reservation_demo_password"
                     type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
+                    autoComplete="new-password"
                     value={password}
                     onChange={(e) => {
                       setPassword(e.target.value);
@@ -236,24 +238,37 @@ export default function LoginPage() {
             <div className="mb-3 flex items-start justify-between gap-4">
               <div>
                 <p className="font-semibold text-ink-strong">حساب‌های آزمایشی معتبر</p>
-                <p className="mt-1 text-xs text-ink-muted">مربوط به دیتاست کامل پروژه</p>
+                <p className="mt-1 text-xs text-ink-muted">اطلاعات هماهنگ با دیتابیس پروژه</p>
               </div>
               <span className="rounded-full border border-success-border bg-success-soft px-2.5 py-1 text-[10px] font-bold text-success-ink">
                 فعال
               </span>
             </div>
             <div className="grid gap-3">
-              {[defaultData.credentials.admin, ...defaultData.credentials.users].map((account) => (
+              {demoAccounts.map((account) => (
                 <div key={account.email} className="rounded-2xl border border-line-strong bg-surface-card p-3">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
-                      <p className="font-medium text-ink-strong">{account.label}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-medium text-ink-strong">{account.label}</p>
+                        <span className="rounded-full border border-line-strong bg-surface-muted px-2 py-0.5 text-[10px] font-semibold text-ink-muted">
+                          {account.role === 'ADMIN' ? 'مدیر' : 'کاربر'}
+                        </span>
+                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                          account.availability === 'ALWAYS'
+                            ? 'border-success-border bg-success-soft text-success-ink'
+                            : 'border-brand-border bg-brand-soft text-brand-ink'
+                        }`}>
+                          {account.availability === 'ALWAYS' ? 'همیشه موجود' : 'دیتاست کامل'}
+                        </span>
+                      </div>
                       <p className="ltr mt-1 break-all text-left text-xs text-ink-muted" dir="ltr">
                         {account.email}
                       </p>
-                      <p className="ltr mt-1 text-left text-xs font-semibold text-brand-ink" dir="ltr">
-                        {account.password}
-                      </p>
+                      <div className="ltr mt-1 flex flex-wrap gap-x-3 gap-y-1 text-left text-xs" dir="ltr">
+                        <span className="text-ink-muted">ID: {account.student_id}</span>
+                        <span className="font-semibold text-brand-ink">Password: {account.password}</span>
+                      </div>
                     </div>
                     <button
                       type="button"

@@ -5,10 +5,13 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- Users table
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    student_id VARCHAR(20) UNIQUE NOT NULL,
+    student_id VARCHAR(20) UNIQUE NOT NULL CHECK (student_id ~ '^[0-9]{10,20}$'),
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
-    email VARCHAR(254) UNIQUE NOT NULL,
+    email VARCHAR(254) UNIQUE NOT NULL CHECK (
+        email = LOWER(BTRIM(email))
+        AND SPLIT_PART(email, '@', 2) = 'gmail.com'
+    ),
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(10) NOT NULL DEFAULT 'USER' CHECK (role IN ('ADMIN', 'USER')),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -25,7 +28,7 @@ CREATE TABLE events (
     start_time VARCHAR(5) NOT NULL,
     end_time VARCHAR(5) NOT NULL,
     total_capacity INTEGER NOT NULL CHECK (total_capacity > 0),
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'CANCELLED', 'COMPLETED')),
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'CANCELLED', 'COMPLETED', 'CLOSED')),
     created_by UUID NOT NULL REFERENCES users(id),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
@@ -49,7 +52,7 @@ CREATE TABLE reservations (
     user_id UUID NOT NULL REFERENCES users(id),
     event_id UUID NOT NULL REFERENCES events(id),
     seat_id UUID NOT NULL REFERENCES seats(id),
-    status VARCHAR(10) NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'CANCELLED')),
+    status VARCHAR(10) NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'CANCELLED', 'COMPLETED')),
     reserved_at TIMESTAMP NOT NULL DEFAULT NOW(),
     cancelled_at TIMESTAMP,
     UNIQUE (event_id, seat_id),

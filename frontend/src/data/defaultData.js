@@ -12,7 +12,7 @@ const events = [
     occupancy_rate: 77,
     status: 'ACTIVE',
     poster_url: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=900&q=80',
-    organizer: { id: 'admin-1', name: 'ادمین سیستم', email: 'admin@basu.ac.ir' },
+    organizer: { id: 'admin-1', name: 'ادمین سیستم', email: 'ticket.reservation.demo+system-admin@gmail.com' },
   },
   {
     id: 'evt-2',
@@ -27,7 +27,7 @@ const events = [
     occupancy_rate: 60,
     status: 'CLOSED',
     poster_url: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=900&q=80',
-    organizer: { id: 'admin-1', name: 'ادمین سیستم', email: 'admin@basu.ac.ir' },
+    organizer: { id: 'admin-1', name: 'ادمین سیستم', email: 'ticket.reservation.demo+system-admin@gmail.com' },
   },
   {
     id: 'evt-3',
@@ -42,7 +42,7 @@ const events = [
     occupancy_rate: 100,
     status: 'COMPLETED',
     poster_url: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=900&q=80',
-    organizer: { id: 'admin-1', name: 'ادمین سیستم', email: 'admin@basu.ac.ir' },
+    organizer: { id: 'admin-1', name: 'ادمین سیستم', email: 'ticket.reservation.demo+system-admin@gmail.com' },
   },
   {
     id: 'evt-4',
@@ -57,7 +57,7 @@ const events = [
     occupancy_rate: 72,
     status: 'ACTIVE',
     poster_url: 'https://images.unsplash.com/photo-1508921912186-1d1a45ebb3c1?auto=format&fit=crop&w=900&q=80',
-    organizer: { id: 'org-1', name: 'انجمن فرهنگی', email: 'culture@basu.ac.ir' },
+    organizer: { id: 'org-1', name: 'انجمن فرهنگی', email: 'ticket.reservation.demo+culture@gmail.com' },
   },
   {
     id: 'evt-5',
@@ -72,7 +72,7 @@ const events = [
     occupancy_rate: 88,
     status: 'ACTIVE',
     poster_url: 'https://images.unsplash.com/photo-1555066932-5f0b0e9b2a6b?auto=format&fit=crop&w=900&q=80',
-    organizer: { id: 'org-2', name: 'مرکز فناوری اطلاعات', email: 'it@basu.ac.ir' },
+    organizer: { id: 'org-2', name: 'مرکز فناوری اطلاعات', email: 'ticket.reservation.demo+it@gmail.com' },
   },
   {
     id: 'evt-6',
@@ -87,7 +87,7 @@ const events = [
     occupancy_rate: 50,
     status: 'ACTIVE',
     poster_url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=80',
-    organizer: { id: 'org-3', name: 'دفتر امور فرهنگی', email: 'events@basu.ac.ir' },
+    organizer: { id: 'org-3', name: 'دفتر امور فرهنگی', email: 'ticket.reservation.demo+events@gmail.com' },
   },
   {
     id: 'evt-7',
@@ -102,7 +102,7 @@ const events = [
     occupancy_rate: 0,
     status: 'ACTIVE',
     poster_url: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=80',
-    organizer: { id: 'org-4', name: 'مرکز نوآوری', email: 'startup@basu.ac.ir' },
+    organizer: { id: 'org-4', name: 'مرکز نوآوری', email: 'ticket.reservation.demo+startup@gmail.com' },
   },
   {
     id: 'evt-8',
@@ -117,7 +117,7 @@ const events = [
     occupancy_rate: 100,
     status: 'COMPLETED',
     poster_url: 'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=900&q=80',
-    organizer: { id: 'org-5', name: 'گروه تئاتر', email: 'theater@basu.ac.ir' },
+    organizer: { id: 'org-5', name: 'گروه تئاتر', email: 'ticket.reservation.demo+theater@gmail.com' },
   },
 ];
 
@@ -289,16 +289,16 @@ const seatMaps = {
 
 const reservations = {
   active: [
-    { id: 'res-1', event_id: 'evt-1', event_title: events[0].title, event_date: events[0].event_date, start_time: events[0].start_time, end_time: events[0].end_time, seat_label: 'A3', row_number: 1, status: 'ACTIVE', user_full_name: 'رضا رضایی', user_student_id: '98123456', reserved_at: '2026-06-22T10:12:00Z' },
-    { id: 'res-2', event_id: 'evt-2', event_title: events[1].title, event_date: events[1].event_date, start_time: events[1].start_time, end_time: events[1].end_time, seat_label: 'B4', row_number: 2, status: 'ACTIVE', user_full_name: 'سارا محمدی', user_student_id: '98123457', reserved_at: '2026-06-23T14:30:00Z' },
-    { id: 'res-4', event_id: 'evt-4', event_title: events[3].title, event_date: events[3].event_date, start_time: events[3].start_time, end_time: events[3].end_time, seat_label: 'C2', row_number: 3, status: 'ACTIVE', user_full_name: 'علی کریمی', user_student_id: '98123459', reserved_at: '2026-07-01T11:00:00Z' },
-    { id: 'res-5', event_id: 'evt-5', event_title: events[4].title, event_date: events[4].event_date, start_time: events[4].start_time, end_time: events[4].end_time, seat_label: 'A1', row_number: 1, status: 'ACTIVE', user_full_name: 'نگار احمدی', user_student_id: '98123460', reserved_at: '2026-07-02T15:20:00Z' },
-    { id: 'res-6', event_id: 'evt-6', event_title: events[5].title, event_date: events[5].event_date, start_time: events[5].start_time, end_time: events[5].end_time, seat_label: 'A4', row_number: 1, status: 'ACTIVE', user_full_name: 'مینا رضایی', user_student_id: '98123461', reserved_at: '2026-07-05T19:00:00Z' },
+    { id: 'res-1', event_id: 'evt-1', event_title: events[0].title, event_date: events[0].event_date, start_time: events[0].start_time, end_time: events[0].end_time, seat_label: 'A3', row_number: 1, status: 'ACTIVE', user_full_name: 'رضا رضایی', user_student_id: '4012345656', reserved_at: '2026-06-22T10:12:00Z' },
+    { id: 'res-2', event_id: 'evt-2', event_title: events[1].title, event_date: events[1].event_date, start_time: events[1].start_time, end_time: events[1].end_time, seat_label: 'B4', row_number: 2, status: 'ACTIVE', user_full_name: 'سارا محمدی', user_student_id: '4012345657', reserved_at: '2026-06-23T14:30:00Z' },
+    { id: 'res-4', event_id: 'evt-4', event_title: events[3].title, event_date: events[3].event_date, start_time: events[3].start_time, end_time: events[3].end_time, seat_label: 'C2', row_number: 3, status: 'ACTIVE', user_full_name: 'علی کریمی', user_student_id: '4012345659', reserved_at: '2026-07-01T11:00:00Z' },
+    { id: 'res-5', event_id: 'evt-5', event_title: events[4].title, event_date: events[4].event_date, start_time: events[4].start_time, end_time: events[4].end_time, seat_label: 'A1', row_number: 1, status: 'ACTIVE', user_full_name: 'نگار احمدی', user_student_id: '4012345660', reserved_at: '2026-07-02T15:20:00Z' },
+    { id: 'res-6', event_id: 'evt-6', event_title: events[5].title, event_date: events[5].event_date, start_time: events[5].start_time, end_time: events[5].end_time, seat_label: 'A4', row_number: 1, status: 'ACTIVE', user_full_name: 'مینا رضایی', user_student_id: '4012345661', reserved_at: '2026-07-05T19:00:00Z' },
   ],
   history: [
-    { id: 'res-3', event_id: 'evt-3', event_title: events[2].title, event_date: events[2].event_date, start_time: events[2].start_time, end_time: events[2].end_time, seat_label: 'A1', row_number: 1, status: 'CANCELLED', user_full_name: 'مهدی علیزاده', user_student_id: '98123458', reserved_at: '2026-06-19T09:00:00Z' },
-    { id: 'res-7', event_id: 'evt-8', event_title: events[7].title, event_date: events[7].event_date, start_time: events[7].start_time, end_time: events[7].end_time, seat_label: 'A2', row_number: 1, status: 'COMPLETED', user_full_name: 'حسین ملکی', user_student_id: '98123462', reserved_at: '2026-07-10T18:00:00Z' },
-    { id: 'res-8', event_id: 'evt-6', event_title: events[5].title, event_date: events[5].event_date, start_time: events[5].start_time, end_time: events[5].end_time, seat_label: 'B3', row_number: 2, status: 'COMPLETED', user_full_name: 'نسرین کاظمی', user_student_id: '98123463', reserved_at: '2026-07-12T20:00:00Z' },
+    { id: 'res-3', event_id: 'evt-3', event_title: events[2].title, event_date: events[2].event_date, start_time: events[2].start_time, end_time: events[2].end_time, seat_label: 'A1', row_number: 1, status: 'CANCELLED', user_full_name: 'مهدی علیزاده', user_student_id: '4012345658', reserved_at: '2026-06-19T09:00:00Z' },
+    { id: 'res-7', event_id: 'evt-8', event_title: events[7].title, event_date: events[7].event_date, start_time: events[7].start_time, end_time: events[7].end_time, seat_label: 'A2', row_number: 1, status: 'COMPLETED', user_full_name: 'حسین ملکی', user_student_id: '4012345662', reserved_at: '2026-07-10T18:00:00Z' },
+    { id: 'res-8', event_id: 'evt-6', event_title: events[5].title, event_date: events[5].event_date, start_time: events[5].start_time, end_time: events[5].end_time, seat_label: 'B3', row_number: 2, status: 'COMPLETED', user_full_name: 'نسرین کاظمی', user_student_id: '4012345663', reserved_at: '2026-07-12T20:00:00Z' },
   ],
 };
 
@@ -318,10 +318,10 @@ const stats = {
     { date: '1405/04/10', count: 20 },
   ],
   recent_reservations: [
-    { user_full_name: 'رضا رضایی', user_student_id: '98123456', event_title: events[0].title, seat_label: 'A3', status: 'ACTIVE' },
-    { user_full_name: 'سارا محمدی', user_student_id: '98123457', event_title: events[1].title, seat_label: 'B4', status: 'ACTIVE' },
-    { user_full_name: 'علی کریمی', user_student_id: '98123459', event_title: events[3].title, seat_label: 'C2', status: 'ACTIVE' },
-    { user_full_name: 'نگار احمدی', user_student_id: '98123460', event_title: events[4].title, seat_label: 'A1', status: 'ACTIVE' },
+    { user_full_name: 'رضا رضایی', user_student_id: '4012345656', event_title: events[0].title, seat_label: 'A3', status: 'ACTIVE' },
+    { user_full_name: 'سارا محمدی', user_student_id: '4012345657', event_title: events[1].title, seat_label: 'B4', status: 'ACTIVE' },
+    { user_full_name: 'علی کریمی', user_student_id: '4012345659', event_title: events[3].title, seat_label: 'C2', status: 'ACTIVE' },
+    { user_full_name: 'نگار احمدی', user_student_id: '4012345660', event_title: events[4].title, seat_label: 'A1', status: 'ACTIVE' },
   ],
 };
 
@@ -343,30 +343,36 @@ const defaultData = {
   occupancyData,
   eventReports,
   users: [
-    { id: 'user-1', first_name: 'رضا', last_name: 'رضایی', email: 'user1@basu.ac.ir', student_id: '98123456' },
-    { id: 'user-2', first_name: 'سارا', last_name: 'محمدی', email: 'user2@basu.ac.ir', student_id: '98123457' },
-    { id: 'user-3', first_name: 'علی', last_name: 'کریمی', email: 'ali@basu.ac.ir', student_id: '98123459' },
-    { id: 'user-4', first_name: 'نگار', last_name: 'احمدی', email: 'negar@basu.ac.ir', student_id: '98123460' },
+    { id: 'user-1', first_name: 'رضا', last_name: 'رضایی', email: 'ticket.reservation.demo+user01@gmail.com', student_id: '4012345656' },
+    { id: 'user-2', first_name: 'سارا', last_name: 'محمدی', email: 'ticket.reservation.demo+user02@gmail.com', student_id: '4012345657' },
+    { id: 'user-3', first_name: 'علی', last_name: 'کریمی', email: 'ticket.reservation.demo+user03@gmail.com', student_id: '4012345659' },
+    { id: 'user-4', first_name: 'نگار', last_name: 'احمدی', email: 'ticket.reservation.demo+user04@gmail.com', student_id: '4012345660' },
   ],
   credentials: {
     admin: {
-      label: 'مدیر دیتاست — نگار احمدی',
-      email: 'negar.ahmadi@basu.ac.ir',
+      label: 'مدیر اصلی سامانه',
+      email: 'ticket.reservation.demo+system-admin@gmail.com',
       password: 'REMOVED_SECRET',
+      student_id: '4000000001',
       role: 'ADMIN',
+      availability: 'ALWAYS',
     },
     users: [
       {
-        label: 'کاربر فعال — علی محمدی',
-        email: 'ali.mohammadi@student.basu.ac.ir',
+        label: 'مدیر دیتاست — نگار احمدی',
+        email: 'ticket.reservation.demo+full.user001@gmail.com',
         password: 'REMOVED_SECRET',
-        role: 'USER',
+        student_id: '4100000001',
+        role: 'ADMIN',
+        availability: 'FULL_DATASET',
       },
       {
-        label: 'کاربر فعال — زهرا حسینی',
-        email: 'zahra.hosseini@student.basu.ac.ir',
+        label: 'کاربر فعال — آیدا سلیمانی',
+        email: 'ticket.reservation.demo+full.user051@gmail.com',
         password: 'REMOVED_SECRET',
+        student_id: '4100000051',
         role: 'USER',
+        availability: 'FULL_DATASET',
       },
     ],
   },

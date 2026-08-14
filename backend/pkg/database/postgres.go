@@ -1,6 +1,7 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 	"log"
 
@@ -56,44 +57,98 @@ func Migrate(db *gorm.DB) error {
 	if err := migrateRegistrationConstraints(db); err != nil {
 		return fmt.Errorf("failed to migrate registration constraints: %w", err)
 	}
+	if err := migrateReservationStatusConstraint(db); err != nil {
+		return fmt.Errorf("failed to migrate reservation status constraint: %w", err)
+	}
+	if err := migrateEventStatusConstraint(db); err != nil {
+		return fmt.Errorf("failed to migrate event status constraint: %w", err)
+	}
 
 	log.Println("Database migrations completed successfully")
 	return nil
 }
 
+func migrateEventStatusConstraint(db *gorm.DB) error {
+	return db.Exec(`
+		ALTER TABLE events DROP CONSTRAINT IF EXISTS chk_events_status;
+		ALTER TABLE events DROP CONSTRAINT IF EXISTS events_status_check;
+		ALTER TABLE events
+		ADD CONSTRAINT chk_events_status
+		CHECK (status IN ('ACTIVE', 'CANCELLED', 'COMPLETED', 'CLOSED'));
+	`).Error
+}
+
+func migrateReservationStatusConstraint(db *gorm.DB) error {
+	return db.Exec(`
+		ALTER TABLE reservations DROP CONSTRAINT IF EXISTS chk_reservations_status;
+		ALTER TABLE reservations DROP CONSTRAINT IF EXISTS reservations_status_check;
+		ALTER TABLE reservations
+		ADD CONSTRAINT chk_reservations_status
+		CHECK (status IN ('ACTIVE', 'CANCELLED', 'COMPLETED'));
+	`).Error
+}
+
 func migrateRegistrationConstraints(db *gorm.DB) error {
+	const registrationPredicate = `
+		student_id ~ '^[0-9]{10,20}$'
+		AND SPLIT_PART(email, '@', 2) = 'gmail.com'`
+
+	var invalidUsers int64
+	if err := db.Raw(`SELECT COUNT(*) FROM users WHERE NOT (` + registrationPredicate + `)`).Scan(&invalidUsers).Error; err != nil {
+		return err
+	}
+	if invalidUsers > 0 {
+		return fmt.Errorf("found %d existing user(s) with a non-Gmail email or invalid student ID; run scripts/audit_user_data.sql and correct those records", invalidUsers)
+	}
+
 	return db.Exec(`
 		CREATE OR REPLACE FUNCTION enforce_user_registration_fields()
 		RETURNS TRIGGER AS $$
 		BEGIN
-			IF NEW.role = 'USER' THEN
-				IF NEW.student_id !~ '^[0-9]{10,20}$' THEN
-					RAISE EXCEPTION 'student_id must contain 10 to 20 digits'
-						USING ERRCODE = '23514';
-				END IF;
+			IF NEW.student_id !~ '^[0-9]{10,20}$' THEN
+				RAISE EXCEPTION 'student_id must contain 10 to 20 digits'
+					USING ERRCODE = '23514';
+			END IF;
 
-				IF SPLIT_PART(LOWER(BTRIM(NEW.email)), '@', 2) <> 'gmail.com' THEN
-					RAISE EXCEPTION 'user email must use the gmail.com domain'
-						USING ERRCODE = '23514';
-				END IF;
+			IF NEW.email <> LOWER(BTRIM(NEW.email)) OR SPLIT_PART(NEW.email, '@', 2) <> 'gmail.com' THEN
+				RAISE EXCEPTION 'email must be normalized and use the exact gmail.com domain'
+					USING ERRCODE = '23514';
 			END IF;
 
 			RETURN NEW;
 		END;
 		$$ LANGUAGE plpgsql;
 
+		DROP TRIGGER IF EXISTS users_registration_fields_before_insert ON users;
+		DROP TRIGGER IF EXISTS users_registration_fields_before_write ON users;
+
+		CREATE TRIGGER users_registration_fields_before_write
+		BEFORE INSERT OR UPDATE OF student_id, email, role ON users
+		FOR EACH ROW
+		EXECUTE FUNCTION enforce_user_registration_fields();
+
 		DO $$
 		BEGIN
 			IF NOT EXISTS (
 				SELECT 1
-				FROM pg_trigger
-				WHERE tgname = 'users_registration_fields_before_insert'
-				  AND tgrelid = 'users'::regclass
+				FROM pg_constraint
+				WHERE conname = 'users_student_id_format_check'
+				  AND conrelid = 'users'::regclass
 			) THEN
-				CREATE TRIGGER users_registration_fields_before_insert
-				BEFORE INSERT ON users
-				FOR EACH ROW
-				EXECUTE FUNCTION enforce_user_registration_fields();
+				ALTER TABLE users
+				ADD CONSTRAINT users_student_id_format_check
+				CHECK (student_id ~ '^[0-9]{10,20}$');
+			END IF;
+
+			IF NOT EXISTS (
+				SELECT 1
+				FROM pg_constraint
+				WHERE conname = 'users_gmail_domain_check'
+				  AND conrelid = 'users'::regclass
+			) THEN
+				ALTER TABLE users
+				ADD CONSTRAINT users_gmail_domain_check
+				CHECK (email = LOWER(BTRIM(email)) AND SPLIT_PART(email, '@', 2) = 'gmail.com');
 			END IF;
 		END $$;
 	`).Error
@@ -143,10 +198,7 @@ func migrateEmailIntegrity(db *gorm.DB) error {
 		return err
 	}
 	if invalidLegacyUsers > 0 {
-		if err := db.Exec(`UPDATE users SET is_active = FALSE WHERE NOT (` + databaseEmailPredicate + `)`).Error; err != nil {
-			return err
-		}
-		log.Printf("Warning: deactivated %d legacy user(s) with invalid email structure", invalidLegacyUsers)
+		return fmt.Errorf("found %d existing user(s) with an invalid email structure; run scripts/audit_user_data.sql and correct those records", invalidLegacyUsers)
 	}
 
 	constraintSQL := `
@@ -167,38 +219,44 @@ func migrateEmailIntegrity(db *gorm.DB) error {
 	if err := db.Exec(constraintSQL).Error; err != nil {
 		return err
 	}
-	if invalidLegacyUsers > 0 {
-		return nil
-	}
-
 	return db.Exec(`ALTER TABLE users VALIDATE CONSTRAINT users_email_integrity_check`).Error
 }
 
 func SeedAdmin(db *gorm.DB) error {
-	var count int64
-	db.Model(&models.User{}).Where("role = ?", "ADMIN").Count(&count)
-	if count > 0 {
+	const (
+		defaultAdminStudentID = "4000000001"
+		defaultAdminEmail     = "ticket.reservation.demo+system-admin@gmail.com"
+		defaultAdminPassword  = "REMOVED_SECRET"
+	)
+
+	var existingAdmin models.User
+	err := db.Where("LOWER(email) = ?", defaultAdminEmail).First(&existingAdmin).Error
+	if err == nil {
 		return nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return fmt.Errorf("failed to check default admin: %w", err)
 	}
 
 	admin := &models.User{
-		StudentID:    "ADMIN001",
+		StudentID:    defaultAdminStudentID,
 		FirstName:    "مدیر",
 		LastName:     "سامانه",
-		Email:        "admin@basu.ac.ir",
+		Email:        defaultAdminEmail,
 		PasswordHash: "$2a$10$dummyhashwillbesetproperly",
 		Role:         "ADMIN",
 		IsActive:     true,
 	}
 
-	// Set proper password hash for "REMOVED_SECRET"
 	admin.PasswordHash = ""
-	admin.SetPassword("REMOVED_SECRET")
+	if err := admin.SetPassword(defaultAdminPassword); err != nil {
+		return fmt.Errorf("failed to hash default admin password: %w", err)
+	}
 
 	if err := db.Create(admin).Error; err != nil {
 		return fmt.Errorf("failed to seed admin user: %w", err)
 	}
 
-	log.Println("Admin user seeded successfully (admin@basu.ac.ir / REMOVED_SECRET)")
+	log.Printf("Admin user seeded successfully (%s / %s)", defaultAdminEmail, defaultAdminPassword)
 	return nil
 }

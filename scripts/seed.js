@@ -54,9 +54,9 @@ const usersToCreate = Array.from({ length: NUM_USERS }).map((_, i) => {
   const fn = firstNames[i % firstNames.length];
   const ln = lastNames[i % lastNames.length];
   const idx = Math.floor(i / Math.max(1, firstNames.length)) + 1;
-  const email = `${fn.l}.${ln.l}${idx}@basu.ac.ir`;
+  const email = `ticket.reservation.demo+${fn.l}.${ln.l}${idx}@gmail.com`;
   return {
-    student_id: `9812${(340 + i).toString().padStart(4,'0')}`,
+    student_id: `4012${(340 + i).toString().padStart(6,'0')}`,
     first_name: fn.p,
     last_name: ln.p,
     email,
@@ -118,7 +118,7 @@ async function main() {
   // Login admin
   let adminToken;
   try {
-    const loginResp = await request({ method: 'POST', path: '/api/v1/auth/login' }, { email: 'admin@basu.ac.ir', password: 'REMOVED_SECRET' });
+    const loginResp = await request({ method: 'POST', path: '/api/v1/auth/login' }, { email: 'ticket.reservation.demo+system-admin@gmail.com', password: 'REMOVED_SECRET' });
     adminToken = loginResp.data.token;
     console.log('Admin logged in.');
   } catch (e) { console.error('Admin login failed — ensure backend running and migrations executed.'); throw e; }
@@ -213,4 +213,11 @@ async function main() {
   console.log('Seeding complete.');
 }
 
-main().catch(e => console.error('Seed error:', e));
+if (require.main === module) {
+  main().catch(e => {
+    console.error('Seed error:', e);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { usersToCreate };

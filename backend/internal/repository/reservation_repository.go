@@ -125,7 +125,7 @@ func (r *ReservationRepository) SetCancelled(tx *gorm.DB, id uuid.UUID) error {
 func (r *ReservationRepository) CountByEvent(eventID uuid.UUID) (int64, error) {
 	var count int64
 	err := r.db.Model(&models.Reservation{}).
-		Where("event_id = ? AND status = ?", eventID, "ACTIVE").
+		Where("event_id = ? AND status IN ?", eventID, []string{"ACTIVE", "COMPLETED"}).
 		Count(&count).Error
 	return count, err
 }
