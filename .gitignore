@@ -37,6 +37,22 @@ CLAUDE.local.md
 # Go
 backend/tmp/
 
+# Runtime data and uploads
+.fcc/*.sqlite
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Generated diagnostics and reports
+docker_*.txt
+prj-report*
+term-test.txt
+tmp_*
+qc
+
 # Debug
 debug/
 __debug_bin*

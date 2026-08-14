@@ -7,7 +7,7 @@
 
   <p>
     <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=06111F" alt="React 19" />
-    <img src="https://img.shields.io/badge/Go-1.21-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go 1.21" />
+    <img src="https://img.shields.io/badge/Go-1.26-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go 1.26" />
     <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL 16" />
     <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Ready" />
     <img src="https://img.shields.io/badge/RTL-فارسی-F9C74F?style=for-the-badge" alt="Persian RTL" />
@@ -82,7 +82,7 @@ flowchart LR
 | لایه | فناوری | مسئولیت |
 |---|---|---|
 | رابط کاربری | React 19 · Vite 8 · Tailwind CSS · Recharts | صفحات دانشجو و مدیر، نقشه صندلی و نمودارها |
-| API | Go 1.21 · Gin · GORM | منطق کسب‌وکار، اعتبارسنجی، احراز هویت و گزارش‌ها |
+| API | Go 1.26 · Gin · GORM | منطق کسب‌وکار، اعتبارسنجی، احراز هویت و گزارش‌ها |
 | داده | PostgreSQL 16 | کاربران، رویدادها، صندلی‌ها، رزروها و لاگ‌ها |
 | اجرا | Docker Compose | ساخت و اجرای یکپارچه سرویس‌ها و بررسی سلامت |
 
@@ -97,11 +97,11 @@ flowchart TB
 ## ⚡ شروع سریع با Docker
 
 <p dir="rtl" align="right">
-برای اجرای پروژه فقط Docker Desktop لازم است. دستور زیر دیتابیس، بک‌اند و فرانت‌اند را می‌سازد و سرویس‌ها را با بررسی سلامت بالا می‌آورد:
+برای اجرای پروژه فقط Docker Desktop لازم است. اسکریپت زیر در اولین اجرا یک فایل محلی `.env` با رمزهای تصادفی می‌سازد، سپس دیتابیس، بک‌اند و فرانت‌اند را با بررسی سلامت بالا می‌آورد:
 </p>
 
 ```powershell
-docker compose up -d --build --force-recreate backend frontend
+.\build.ps1
 ```
 
 پس از آماده شدن سرویس‌ها:
@@ -115,21 +115,11 @@ docker compose up -d --build --force-recreate backend frontend
 > [!NOTE]
 > نشانی اصلی پورت `8080` صفحه وب نیست؛ برای بررسی بک‌اند از مسیر `/health` و برای استفاده از سامانه از پورت `3000` استفاده کنید.
 
-## 🔑 حساب‌های آماده دمو
+## 🔑 حساب‌های دمو
 
-<table dir="rtl">
-  <thead>
-    <tr><th>کاربرد</th><th>ایمیل</th><th>شماره دانشجویی</th><th>رمز عبور</th><th>زمان دسترسی</th></tr>
-  </thead>
-  <tbody>
-    <tr><td>مدیر اصلی سامانه</td><td><code>ticket.reservation.demo+system-admin@gmail.com</code></td><td><code>4000000001</code></td><td><code>REMOVED_SECRET</code></td><td>همیشه پس از اجرای برنامه</td></tr>
-    <tr><td>مدیر دیتاست</td><td><code>ticket.reservation.demo+full.user001@gmail.com</code></td><td><code>4100000001</code></td><td><code>REMOVED_SECRET</code></td><td>پس از بارگذاری دیتاست کامل</td></tr>
-    <tr><td>دانشجوی فعال</td><td><code>ticket.reservation.demo+full.user051@gmail.com</code></td><td><code>4100000051</code></td><td><code>REMOVED_SECRET</code></td><td>پس از بارگذاری دیتاست کامل</td></tr>
-  </tbody>
-</table>
+حساب دمو به‌صورت پیش‌فرض ساخته نمی‌شود. برای محیط توسعه، `DEMO_MODE=true` را در فایل محلی `.env` قرار دهید و ایمیل، شماره دانشجویی و یک رمز قوی را با متغیرهای `DEMO_ADMIN_*` تعیین کنید. این حالت را در محیط عملیاتی فعال نکنید.
 
-> [!IMPORTANT]
-> همه این حساب‌ها آزمایشی هستند. اطلاعات دیتاست ساختگی اما معتبر است و به افراد واقعی تعلق ندارد.
+رمز همهٔ کاربران دیتاست آزمایشی نیز از `DEMO_DATA_PASSWORD` خوانده می‌شود و در کد، رابط کاربری یا مستندات ذخیره نشده است.
 
 ## 🗃️ دیتاست کامل آزمایشی
 
@@ -174,7 +164,7 @@ docker compose --profile seed run --rm full-data
 
 ### پیش‌نیازها
 
-- Go 1.21 یا بالاتر
+- Go 1.26 یا بالاتر
 - Node.js 20 یا بالاتر
 - PostgreSQL 16
 
@@ -183,7 +173,7 @@ docker compose --profile seed run --rm full-data
 ```bash
 cd backend
 cp .env.example .env
-go mod tidy
+go mod download
 go run cmd/server/main.go
 ```
 
@@ -191,7 +181,7 @@ go run cmd/server/main.go
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
