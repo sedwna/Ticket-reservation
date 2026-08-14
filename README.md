@@ -1,6 +1,4 @@
 <div align="center">
-  <img src="./docs/readme-banner.svg" width="100%" alt="Amphi Seat — سامانه رزرو صندلی آمفی‌تئاتر" />
-
   <h1>🎟️ سامانه هوشمند رزرو صندلی آمفی‌تئاتر</h1>
 
   <p dir="rtl">یک راه ساده، منظم و عادلانه برای مدیریت همایش‌ها و برنامه‌های اصلی دانشگاه</p>
@@ -10,19 +8,22 @@
     <img src="https://img.shields.io/badge/Go-1.26-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go 1.26" />
     <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL 16" />
     <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Ready" />
-    <img src="https://img.shields.io/badge/RTL-فارسی-F9C74F?style=for-the-badge" alt="Persian RTL" />
+    <a href="https://github.com/sedwna/Ticket-reservation/releases/tag/v5.7.1"><img src="https://img.shields.io/github/v/release/sedwna/Ticket-reservation?style=for-the-badge" alt="Latest release" /></a>
+    <a href="https://github.com/sedwna/Ticket-reservation/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/sedwna/Ticket-reservation/ci.yml?branch=main&style=for-the-badge&label=CI" alt="CI status" /></a>
   </p>
 
   <p>
-    <a href="#-چرا-این-سامانه"><b>چرا این سامانه؟</b></a>
-    · <a href="#-امکانات"><b>امکانات</b></a>
-    · <a href="#-شروع-سریع-با-docker"><b>شروع سریع</b></a>
-    · <a href="#-حسابهای-آماده-دمو"><b>حساب‌های دمو</b></a>
-    · <a href="#-دیتاست-کامل-آزمایشی"><b>دیتاست کامل</b></a>
+    <a href="#overview"><b>معرفی</b></a>
+    · <a href="#features"><b>امکانات</b></a>
+    · <a href="#quick-start"><b>شروع سریع</b></a>
+    · <a href="#configuration"><b>پیکربندی</b></a>
+    · <a href="#sample-data"><b>دیتاست آزمایشی</b></a>
   </p>
 </div>
 
 ---
+
+<a id="overview"></a>
 
 ## 🌱 این پروژه به چه درد می‌خورد؟
 
@@ -66,6 +67,8 @@ flowchart LR
 مدیر سامانه هم‌زمان می‌تواند ظرفیت سالن، رزروها، کاربران و گزارش هر رویداد را از پنل مدیریت کنترل کند.
 </p>
 
+<a id="features"></a>
+
 ## 🚀 امکانات
 
 | بخش | قابلیت‌ها |
@@ -74,7 +77,7 @@ flowchart LR
 | 🪑 **صندلی‌ها** | نمایش زنده وضعیت آزاد، رزروشده و رزروشده توسط خود کاربر؛ پشتیبانی از صندلی عادی و VIP |
 | 🧑‍💼 **مدیر** | ساخت و ویرایش رویداد، تولید خودکار صندلی‌ها، مدیریت کاربران و نقش‌ها، فعال یا غیرفعال کردن حساب‌ها |
 | 📈 **گزارش‌ها** | آمار کلی، روند هفتگی رزرو، میزان اشغال سالن، گزارش هر رویداد و خروجی CSV |
-| 🔐 **امنیت** | JWT، سطح دسترسی مبتنی بر نقش، رمزنگاری رمز عبور، کنترل هم‌زمانی رزرو و ثبت عملیات مدیر |
+| 🔐 **امنیت** | JWT، سطح دسترسی مبتنی بر نقش، هش رمز عبور با bcrypt، کنترل هم‌زمانی رزرو و ثبت عملیات مدیر |
 | 🌐 **تجربه کاربری** | رابط فارسی و راست‌چین، تاریخ شمسی، طراحی واکنش‌گرا و پیام‌های واضح |
 
 ## 🧱 فناوری و معماری
@@ -94,14 +97,24 @@ flowchart TB
     ORM --> DB[(PostgreSQL)]
 ```
 
+<a id="quick-start"></a>
+
 ## ⚡ شروع سریع با Docker
 
 <p dir="rtl" align="right">
-برای اجرای پروژه فقط Docker Desktop لازم است. اسکریپت زیر در اولین اجرا یک فایل محلی `.env` با رمزهای تصادفی می‌سازد، سپس دیتابیس، بک‌اند و فرانت‌اند را با بررسی سلامت بالا می‌آورد:
+برای اجرای کانتینری، Docker Engine به‌همراه Docker Compose لازم است. در Windows، اسکریپت زیر در اولین اجرا فایل محلی `.env` را با secretهای تصادفی می‌سازد و سپس سرویس‌ها را با health check بالا می‌آورد:
 </p>
 
 ```powershell
 .\build.ps1
+```
+
+در macOS و Linux ابتدا فایل محیط را بسازید، مقدارهای placeholder را با secretهای قوی جایگزین کنید و Compose را اجرا کنید:
+
+```bash
+cp .env.example .env
+# .env را ویرایش کنید؛ DB_PASSWORD و JWT_SECRET نباید placeholder باقی بمانند.
+docker compose up --detach --build --wait backend frontend
 ```
 
 پس از آماده شدن سرویس‌ها:
@@ -115,11 +128,36 @@ flowchart TB
 > [!NOTE]
 > نشانی اصلی پورت `8080` صفحه وب نیست؛ برای بررسی بک‌اند از مسیر `/health` و برای استفاده از سامانه از پورت `3000` استفاده کنید.
 
+<a id="configuration"></a>
+
+## ⚙️ پیکربندی محیط
+
+فایل ریشهٔ [`.env.example`](./.env.example) مرجع اجرای Docker است. فایل [`backend/.env.example`](./backend/.env.example) برای اجرای مستقیم بک‌اند استفاده می‌شود. فایل‌های `.env` در Git نادیده گرفته می‌شوند و نباید حاوی مقدارهای واقعی در مخزن باشند.
+
+| متغیر | الزام و کاربرد |
+|---|---|
+| `APP_ENV` | یکی از `development`، `test` یا `production` |
+| `DB_PASSWORD` | اجباری و غیر-placeholder |
+| `JWT_SECRET` | اجباری، غیر-placeholder و حداقل ۳۲ نویسه |
+| `JWT_EXPIRY_HOURS` | عددی بین ۱ تا ۱۶۸؛ پیش‌فرض `24` |
+| `CORS_ALLOWED_ORIGINS` | فهرست originهای کامل با جداکنندهٔ ویرگول؛ wildcard مجاز نیست |
+| `EMAIL_DOMAIN_CHECK` | فعال‌سازی بررسی DNS دامنهٔ ایمیل؛ پیش‌فرض `true` |
+| `DEMO_MODE` | پیش‌فرض `false` و در `production` ممنوع |
+| `DEMO_ADMIN_*` | فقط هنگام فعال‌بودن حالت دمو؛ رمز باید حداقل ۱۲ نویسه باشد |
+| `DEMO_DATA_PASSWORD` | فقط برای بارگذاری دیتاست آزمایشی لازم است |
+
+> [!IMPORTANT]
+> در محیط عملیاتی `APP_ENV=production`، originهای HTTPS واقعی و `DB_SSLMODE` مناسب ارائه‌دهندهٔ PostgreSQL را صریح تنظیم کنید. حالت دمو را فعال نکنید.
+
+<a id="demo"></a>
+
 ## 🔑 حساب‌های دمو
 
 حساب دمو به‌صورت پیش‌فرض ساخته نمی‌شود. برای محیط توسعه، `DEMO_MODE=true` را در فایل محلی `.env` قرار دهید و ایمیل، شماره دانشجویی و یک رمز قوی را با متغیرهای `DEMO_ADMIN_*` تعیین کنید. این حالت را در محیط عملیاتی فعال نکنید.
 
 رمز همهٔ کاربران دیتاست آزمایشی نیز از `DEMO_DATA_PASSWORD` خوانده می‌شود و در کد، رابط کاربری یا مستندات ذخیره نشده است.
+
+<a id="sample-data"></a>
 
 ## 🗃️ دیتاست کامل آزمایشی
 
@@ -157,6 +195,8 @@ docker compose --profile seed run --rm full-data
 
 > بررسی قالب و دامنه ایمیل به‌تنهایی مالکیت واقعی صندوق ایمیل را ثابت نمی‌کند. برای محیط عملیاتی دانشگاه بهتر است تأیید ایمیل با کد یک‌بارمصرف و تطبیق شماره دانشجویی با مرجع رسمی دانشگاه اضافه شود.
 
+<a id="manual-install"></a>
+
 ## 🧰 اجرای بدون Docker
 
 <details dir="rtl">
@@ -164,17 +204,30 @@ docker compose --profile seed run --rm full-data
 
 ### پیش‌نیازها
 
-- Go 1.26 یا بالاتر
-- Node.js 20 یا بالاتر
-- PostgreSQL 16
+- Go 1.26 (مطابق `backend/go.mod`)
+- Node.js 22 (نسخهٔ استفاده‌شده در Docker و CI)
+- PostgreSQL 16 و یک دیتابیس با نام پیش‌فرض `ticket_reservation`
 
 ### بک‌اند
+
+در PowerShell:
+
+```powershell
+cd backend
+Copy-Item .env.example .env
+# DB_PASSWORD و JWT_SECRET را در .env با مقدار واقعی جایگزین کنید.
+go mod download
+go run ./cmd/server
+```
+
+در Bash:
 
 ```bash
 cd backend
 cp .env.example .env
+# DB_PASSWORD و JWT_SECRET را در .env با مقدار واقعی جایگزین کنید.
 go mod download
-go run cmd/server/main.go
+go run ./cmd/server
 ```
 
 ### فرانت‌اند
@@ -185,6 +238,8 @@ npm ci
 npm run dev
 ```
 
+رابط توسعه روی [http://localhost:5173](http://localhost:5173) اجرا می‌شود و Vite درخواست‌های `/api` را به بک‌اند روی پورت `8080` هدایت می‌کند.
+
 </details>
 
 ## 🔌 مسیرهای مهم API
@@ -192,18 +247,22 @@ npm run dev
 <details dir="rtl">
   <summary><b>نمایش Endpointها</b></summary>
 
-| بخش | متد | مسیر | کاربرد |
-|---|:---:|---|---|
-| احراز هویت | `POST` | `/api/v1/auth/register` | ثبت‌نام |
-| احراز هویت | `POST` | `/api/v1/auth/login` | ورود |
-| رویداد | `GET` | `/api/v1/events` | فهرست رویدادهای فعال |
-| صندلی | `GET` | `/api/v1/events/:id/seats` | نقشه صندلی‌های رویداد |
-| رزرو | `POST` | `/api/v1/reservations` | ثبت رزرو |
-| رزرو | `GET` | `/api/v1/reservations/my` | رزروهای کاربر |
-| رزرو | `DELETE` | `/api/v1/reservations/:id` | لغو رزرو |
-| مدیریت | `GET` | `/api/v1/admin/users` | مدیریت کاربران |
-| گزارش | `GET` | `/api/v1/admin/reports/stats` | آمار داشبورد |
-| گزارش | `GET` | `/api/v1/admin/reports/export` | خروجی CSV |
+| بخش | متد | مسیر | دسترسی | کاربرد |
+|---|:---:|---|:---:|---|
+| عمومی | `GET` | `/health` | عمومی | سلامت بک‌اند |
+| عمومی | `GET` | `/api/v1/public/stats` | عمومی | آمار عمومی سامانه |
+| احراز هویت | `POST` | `/api/v1/auth/register` | عمومی | ثبت‌نام |
+| احراز هویت | `POST` | `/api/v1/auth/login` | عمومی | ورود |
+| رویداد | `GET` | `/api/v1/events` | کاربر | فهرست رویدادهای فعال |
+| صندلی | `GET` | `/api/v1/events/:id/seats` | کاربر | نقشه صندلی‌های رویداد |
+| رزرو | `POST` | `/api/v1/reservations` | کاربر | ثبت رزرو |
+| رزرو | `GET` | `/api/v1/reservations/my` | کاربر | رزروهای کاربر |
+| رزرو | `DELETE` | `/api/v1/reservations/:id` | کاربر | لغو رزرو |
+| مدیریت | `GET` | `/api/v1/admin/users` | مدیر | مدیریت کاربران |
+| گزارش | `GET` | `/api/v1/admin/reports/stats` | مدیر | آمار داشبورد |
+| گزارش | `GET` | `/api/v1/admin/reports/export` | مدیر | خروجی CSV |
+
+مسیرهای «کاربر» به header از نوع `Authorization: Bearer <token>` نیاز دارند. دسترسی مدیر علاوه بر توکن معتبر، در هر درخواست با وضعیت فعال و نقش فعلی کاربر در دیتابیس تطبیق داده می‌شود.
 
 </details>
 
@@ -232,12 +291,35 @@ Ticket-reservation/
 │       ├── services/            # ارتباط با API
 │       └── context/             # وضعیت سراسری برنامه
 ├── scripts/                     # اعتبارسنجی و دیتاست کامل
-├── docs/                        # فایل‌های تصویری مستندات
+├── .github/workflows/           # CI و بررسی‌های خودکار
 ├── docker-compose.yml
 └── README.md
 ```
 
 </details>
+
+## ✅ کنترل کیفیت
+
+همان بررسی‌های اصلی CI را می‌توان پیش از ارسال تغییرات به‌صورت محلی اجرا کرد:
+
+```bash
+node scripts/verify-version.mjs
+node scripts/validate_static_user_data.mjs
+node scripts/validate_full_dataset.mjs
+
+cd frontend
+npm ci
+npm run lint
+npm run build
+npm audit --audit-level=high
+
+cd ../backend
+go test -race ./...
+go install golang.org/x/vuln/cmd/govulncheck@v1.6.0
+govulncheck ./...
+```
+
+CI روی `main` فرانت‌اند را در Ubuntu و Windows آزمایش می‌کند و برای بک‌اند تست race، بررسی tidy بودن ماژول‌ها و `govulncheck` را اجرا می‌کند. وضعیت اجرای جاری در [GitHub Actions](https://github.com/sedwna/Ticket-reservation/actions/workflows/ci.yml) قابل مشاهده است.
 
 ## 🛡️ نکات فنی مهم
 
@@ -247,7 +329,9 @@ Ticket-reservation/
 - شناسه‌های UUID برای رکوردهای اصلی
 - معماری لایه‌ای `Handler → Service → Repository → Database`
 - ذخیره رمزهای عبور به‌صورت هش‌شده با bcrypt
-- توکن JWT و کنترل دسترسی بر اساس نقش کاربر
+- پذیرش JWT فقط با HS256، issuer معتبر و زمان انقضای اجباری
+- بازاعتبارسنجی نقش و فعال‌بودن مدیر از دیتابیس در هر درخواست مدیریتی
+- CORS مبتنی بر allowlist و بدون wildcard هنگام ارسال credential
 - ثبت لاگ عملیات مهم مدیران
 - بررسی خودکار سلامت سرویس‌ها در Docker Compose
 
