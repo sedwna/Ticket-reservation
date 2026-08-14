@@ -348,34 +348,6 @@ const defaultData = {
     { id: 'user-3', first_name: 'علی', last_name: 'کریمی', email: 'ticket.reservation.demo+user03@gmail.com', student_id: '4012345659' },
     { id: 'user-4', first_name: 'نگار', last_name: 'احمدی', email: 'ticket.reservation.demo+user04@gmail.com', student_id: '4012345660' },
   ],
-  credentials: {
-    admin: {
-      label: 'مدیر اصلی سامانه',
-      email: 'ticket.reservation.demo+system-admin@gmail.com',
-      password: 'REMOVED_SECRET',
-      student_id: '4000000001',
-      role: 'ADMIN',
-      availability: 'ALWAYS',
-    },
-    users: [
-      {
-        label: 'مدیر دیتاست — نگار احمدی',
-        email: 'ticket.reservation.demo+full.user001@gmail.com',
-        password: 'REMOVED_SECRET',
-        student_id: '4100000001',
-        role: 'ADMIN',
-        availability: 'FULL_DATASET',
-      },
-      {
-        label: 'کاربر فعال — آیدا سلیمانی',
-        email: 'ticket.reservation.demo+full.user051@gmail.com',
-        password: 'REMOVED_SECRET',
-        student_id: '4100000051',
-        role: 'USER',
-        availability: 'FULL_DATASET',
-      },
-    ],
-  },
 };
 
 export default defaultData;

@@ -1,20 +1,22 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext.jsx';
 import { useAuth } from './context/authContext';
-import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/auth/LoginPage';
-import RegisterPage from './pages/auth/RegisterPage';
-import EventsListPage from './pages/user/EventsListPage';
-import SeatMapPage from './pages/user/SeatMapPage';
-import MyReservationsPage from './pages/user/MyReservationsPage';
-import DashboardPage from './pages/admin/DashboardPage';
-import EventManagementPage from './pages/admin/EventManagementPage';
-import UserManagementPage from './pages/admin/UserManagementPage';
-import ReportsPage from './pages/admin/ReportsPage';
-import ProfilePage from './pages/auth/ProfilePage';
 import Button from './components/common/Button';
 import LoadingSkeleton from './components/common/LoadingSkeleton';
 import ThemeToggle from './components/common/ThemeToggle';
+
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
+const ProfilePage = lazy(() => import('./pages/auth/ProfilePage'));
+const EventsListPage = lazy(() => import('./pages/user/EventsListPage'));
+const SeatMapPage = lazy(() => import('./pages/user/SeatMapPage'));
+const MyReservationsPage = lazy(() => import('./pages/user/MyReservationsPage'));
+const DashboardPage = lazy(() => import('./pages/admin/DashboardPage'));
+const EventManagementPage = lazy(() => import('./pages/admin/EventManagementPage'));
+const UserManagementPage = lazy(() => import('./pages/admin/UserManagementPage'));
+const ReportsPage = lazy(() => import('./pages/admin/ReportsPage'));
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { isAuthenticated, isAdmin, loading } = useAuth();
@@ -68,7 +70,9 @@ export default function App() {
   return (
     <AuthProvider>
       <Router>
-        <AppRoutes />
+        <Suspense fallback={<LoadingSkeleton fullScreen message="در حال بارگذاری..." />}>
+          <AppRoutes />
+        </Suspense>
       </Router>
     </AuthProvider>
   );
